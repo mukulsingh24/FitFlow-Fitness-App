@@ -1,0 +1,122 @@
+# ==================================================
+# OS Files
+# ==================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==================================================
+# Logs
+# ==================================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==================================================
+# Environment Files
+# ==================================================
+.env
+.env.*
+!.env.example
+
+# ==================================================
+# Flutter
+# ==================================================
+
+client/.dart_tool/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/.packages
+client/.pub/
+client/.pub-cache/
+
+client/build/
+client/coverage/
+
+# Android
+client/android/.gradle/
+client/android/app/debug/
+client/android/app/profile/
+client/android/app/release/
+client/android/local.properties
+
+# iOS
+client/ios/Flutter/.last_build_id
+client/ios/Pods/
+client/ios/.symlinks/
+
+# macOS
+client/macos/Pods/
+
+# Generated Flutter files
+client/lib/generated_plugin_registrant.dart
+
+# ==================================================
+# Firebase
+# ==================================================
+
+client/android/app/google-services.json
+client/ios/Runner/GoogleService-Info.plist
+client/lib/firebase_options.dart
+
+# ==================================================
+# Node.js Backend
+# ==================================================
+
+server/node_modules/
+server/dist/
+server/build/
+server/.next/
+server/.turbo/
+
+backend/node_modules/
+backend/dist/
+backend/build/
+backend/.next/
+backend/.turbo/
+
+# Prisma
+server/prisma/dev.db
+server/prisma/dev.db-journal
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# ==================================================
+# IDE
+# ==================================================
+
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# ==================================================
+# Miscellaneous
+# ==================================================
+
+*.class
+*.pyc
+*.swp
+*.tmp
+*.temp
+.history/
+.svn/
+.atom/
+.build/
+.buildlog/
+.swiftpm/
+migrate_working_dir/
+
+# ==================================================
+# Archives
+# ==================================================
+
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
