@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../admin/dashboard.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -14,7 +15,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final passcodeController = TextEditingController();
 
   bool hidePasscode = true;
-
+  final String adminId = "admin";
   final String adminPasscode = "1234567890";
 
   @override
@@ -25,24 +26,23 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   void adminLogin() {
-    if (_formKey.currentState!.validate()) {
-      if (passcodeController.text == adminPasscode) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Admin Login Successful!"),
-            backgroundColor: Color(0xFF22C55E),
-          ),
-        );
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-        // Add navigation to Admin Dashboard here later
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Incorrect Admin Passcode"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (adminIdController.text.trim() == "admin" &&
+        passcodeController.text == adminPasscode) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Invalid Admin ID or Passcode"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

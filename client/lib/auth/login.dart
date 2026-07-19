@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import './register.dart';
 import './forgot.dart';
 import './admin.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../main/dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,8 +27,19 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void login() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Login Successful!"),
@@ -34,7 +47,41 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // Add navigation to your user dashboard here later
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed. Please try again.";
+
+      if (e.code == "invalid-email") {
+        message = "Please enter a valid email address";
+      } else if (e.code == "user-disabled") {
+        message = "This account has been disabled";
+      } else if (e.code == "user-not-found") {
+        message = "No account found with this email";
+      } else if (e.code == "wrong-password") {
+        message = "Incorrect password";
+      } else if (e.code == "invalid-credential") {
+        message = "Invalid email or password";
+      } else if (e.code == "too-many-requests") {
+        message = "Too many attempts. Please try again later";
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Something went wrong. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

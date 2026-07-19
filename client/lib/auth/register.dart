@@ -11,7 +11,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final usernameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -29,8 +28,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void createAccount() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> createAccount() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text,
+          );
+
+      await userCredential.user?.updateDisplayName(
+        usernameController.text.trim(),
+      );
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Account created successfully!"),
@@ -41,6 +56,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = "Failed to create account";
+
+      if (e.code == "email-already-in-use") {
+        message = "An account already exists with this email";
+      } else if (e.code == "invalid-email") {
+        message = "Please enter a valid email address";
+      } else if (e.code == "weak-password") {
+        message = "Password is too weak";
+      } else if (e.code == "operation-not-allowed") {
+        message = "Email/password registration is not enabled";
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Something went wrong. Please try again."),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
