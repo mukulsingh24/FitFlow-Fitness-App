@@ -91,6 +91,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> signInWithGoogle() async {
     try {
+      await GoogleSignIn.instance.initialize(
+        serverClientId:
+            '843672616688-p9ens6jme89p0di38e8p59ommjjru0nr.apps.googleusercontent.com',
+      );
+
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
 
