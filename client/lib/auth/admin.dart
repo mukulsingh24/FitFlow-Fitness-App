@@ -1,5 +1,5 @@
+import 'package:client/main/dashboard.dart';
 import 'package:flutter/material.dart';
-import '../admin/dashboard.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -34,7 +34,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         passcodeController.text == adminPasscode) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
