@@ -175,8 +175,7 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
 
   void resetCalculator() {
     ageController.clear();
-    heightController.dispose();
-    weightController.dispose();
+    heightController.clear();
     weightController.clear();
 
     setState(() {
