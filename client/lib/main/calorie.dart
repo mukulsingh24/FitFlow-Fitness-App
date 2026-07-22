@@ -38,6 +38,8 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
   double? maintenanceCalories;
   double? targetCalories;
   double? bmrValue;
+  List<dynamic> calorieHistory = [];
+  bool isLoadingHistory = true;
 
   late final AnimationController _entrance;
   late final Animation<double> _headerFade;
@@ -105,6 +107,7 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     ).animate(_cardFade);
 
     _entrance.forward();
+    loadCalorieHistory();
   }
 
   @override
@@ -171,7 +174,7 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
         activityLevel: selectedActivity,
         goal: selectedGoal,
       );
-
+      await loadCalorieHistory();
       debugPrint("CALORIE SAVED: $result");
 
       if (!mounted) return;
@@ -204,6 +207,27 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
         );
       }
     });
+  }
+
+  Future<void> loadCalorieHistory() async {
+    try {
+      final history = await ApiService.getCalorieHistory();
+
+      if (!mounted) return;
+
+      setState(() {
+        calorieHistory = history;
+        isLoadingHistory = false;
+      });
+    } catch (e) {
+      debugPrint("CALORIE HISTORY ERROR: $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingHistory = false;
+      });
+    }
   }
 
   void resetCalculator() {
@@ -284,6 +308,8 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
                           ? _buildResultCard(key: const ValueKey("result"))
                           : const SizedBox.shrink(key: ValueKey("empty")),
                     ),
+                    const SizedBox(height: 24),
+                    _buildCalorieHistory(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -1006,6 +1032,106 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildCalorieHistory() {
+    if (isLoadingHistory) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (calorieHistory.isEmpty) {
+      return const Center(
+        child: Text(
+          "No calorie history yet",
+          style: TextStyle(color: textMuted, fontSize: 14),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Calorie History",
+          style: TextStyle(
+            color: textDark,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          "Your previous daily calorie targets.",
+          style: TextStyle(color: textMuted, fontSize: 13),
+        ),
+        const SizedBox(height: 16),
+
+        ...calorieHistory.map((record) {
+          final double target = (record['target_calories'] as num).toDouble();
+
+          final double weight = (record['weight_kg'] as num).toDouble();
+
+          final String goal = record['goal']?.toString() ?? "";
+
+          final String date =
+              record['created_at']?.toString().split('T').first ?? "";
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: softMint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: primaryDark,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${target.round()} kcal",
+                        style: const TextStyle(
+                          color: textDark,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        "$goal • ${weight.toStringAsFixed(1)} kg",
+                        style: const TextStyle(color: textMuted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Text(
+                  date,
+                  style: const TextStyle(color: textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }

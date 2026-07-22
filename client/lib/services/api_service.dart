@@ -171,4 +171,44 @@ class ApiService {
       'Failed to save calories (${response.statusCode}): ${response.body}',
     );
   }
+
+  static Future<List<dynamic>> getCalorieHistory() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/health/calories'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    }
+
+    throw Exception(
+      'Failed to load calorie history (${response.statusCode}): ${response.body}',
+    );
+  }
+
+  static Future<Map<String, dynamic>?> getLatestCalories() async {
+    final history = await getCalorieHistory();
+
+    if (history.isEmpty) {
+      return null;
+    }
+
+    return Map<String, dynamic>.from(history.first);
+  }
 }

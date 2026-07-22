@@ -19,6 +19,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double? latestBmi;
   double? latestWeight;
   bool isLoadingHealth = true;
+  double? latestCalories;
 
   @override
   void initState() {
@@ -28,23 +29,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadLatestHealthData() async {
     try {
-      final data = await ApiService.getLatestBMI();
+      final bmiData = await ApiService.getLatestBMI();
+      final calorieData = await ApiService.getLatestCalories();
 
       if (!mounted) return;
 
-      if (data != null) {
-        setState(() {
-          latestBmi = (data['bmi'] as num?)?.toDouble();
-          latestWeight = (data['weight'] as num?)?.toDouble();
-          isLoadingHealth = false;
-        });
-      } else {
-        setState(() {
-          isLoadingHealth = false;
-        });
-      }
+      setState(() {
+        if (bmiData != null) {
+          latestBmi = (bmiData['bmi'] as num?)?.toDouble();
+          latestWeight = (bmiData['weight'] as num?)?.toDouble();
+        }
+
+        if (calorieData != null) {
+          latestCalories = (calorieData['target_calories'] as num?)?.toDouble();
+        }
+
+        isLoadingHealth = false;
+      });
     } catch (e) {
-      debugPrint('LATEST BMI ERROR: $e');
+      debugPrint('HEALTH DATA ERROR: $e');
 
       if (!mounted) return;
 
@@ -333,11 +336,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(width: 10),
 
-              const Expanded(
+              Expanded(
                 child: _HealthMetric(
                   icon: Icons.local_fire_department_outlined,
                   title: "Calories",
-                  value: "-- kcal",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestCalories != null
+                      ? "${latestCalories!.round()} kcal"
+                      : "-- kcal",
                 ),
               ),
             ],
