@@ -1,49 +1,46 @@
-import 'package:client/main/bmi.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'calorie.dart';
-import '../auth/login.dart';
+
 import 'notifications.dart';
+import '../services/api_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  Future<void> logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-
-    if (!context.mounted) return;
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
+  static const Color primary = Color(0xFF22C55E);
+  static const Color background = Color(0xFF020617);
+  static const Color cardColor = Color(0xFF0F172A);
 
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
 
+    final String userName = user?.displayName?.isNotEmpty == true
+        ? user!.displayName!
+        : "FitFlow User";
+
+    final String userEmail = user?.email ?? "No email available";
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: background,
         elevation: 0,
         title: const Row(
           children: [
-            Icon(Icons.fitness_center, color: Color(0xFF22C55E)),
+            Icon(Icons.fitness_center, color: primary, size: 27),
             SizedBox(width: 10),
             Text(
               "FitFlow",
               style: TextStyle(
-                color: Color(0xFF0F172A),
+                color: Colors.white,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-
         actions: [
           IconButton(
             tooltip: "Notifications",
@@ -55,306 +52,503 @@ class DashboardScreen extends StatelessWidget {
             },
             icon: const Badge(
               label: Text("2"),
-              child: Icon(
-                Icons.notifications_outlined,
-                color: Color(0xFF0F172A),
-              ),
+              child: Icon(Icons.notifications_outlined, color: Colors.white),
             ),
           ),
-          IconButton(
-            tooltip: "Logout",
-            onPressed: () {
-              logout(context);
-            },
-            icon: const Icon(Icons.logout, color: Color(0xFF0F172A)),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Welcome to FitFlow 💪",
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 26,
+              Text(
+                "Welcome back, $userName 👋",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               Text(
-                user?.email ?? "FitFlow User",
-                style: const TextStyle(color: Color(0xFF64748B), fontSize: 15),
+                userEmail,
+                style: const TextStyle(color: Colors.white38, fontSize: 13),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-              Container(
+              SizedBox(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF052E16)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final data = await ApiService.getCurrentUser();
+
+                      debugPrint('FASTAPI USER: $data');
+
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Backend connected: ${data['email']}'),
+                          backgroundColor: const Color(0xFF22C55E),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint('API ERROR: $e');
+
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Backend error: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.fitness_center,
-                      color: Color(0xFF22C55E),
-                      size: 40,
-                    ),
-
-                    SizedBox(height: 20),
-
-                    Text(
-                      "Your Fitness Journey",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    Text(
-                      "Track your workouts, calories, BMI, body weight and weekly progress.",
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
+                  icon: const Icon(Icons.cloud_done_outlined),
+                  label: const Text(
+                    "TEST BACKEND CONNECTION",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
+
+              const SizedBox(height: 25),
+
+              _buildFitnessSummary(),
 
               const SizedBox(height: 30),
 
               const Text(
-                "Fitness Overview",
+                "Quick Overview",
                 style: TextStyle(
-                  color: Color(0xFF0F172A),
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
 
               const Text(
-                "Track and manage your fitness journey.",
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                "Your fitness activity at a glance.",
+                style: TextStyle(color: Colors.white54, fontSize: 13),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              Row(
+              const Row(
                 children: [
                   Expanded(
-                    child: DashboardCard(
-                      icon: Icons.local_fire_department_outlined,
-                      title: "Calories",
-                      value: "0 kcal",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CalorieCalculatorScreen(),
-                          ),
-                        );
-                      },
+                    child: _OverviewCard(
+                      icon: Icons.fitness_center,
+                      title: "Workouts",
+                      value: "0",
+                      subtitle: "This week",
                     ),
                   ),
 
-                  const SizedBox(width: 15),
+                  SizedBox(width: 12),
 
-                  const Expanded(
-                    child: DashboardCard(
-                      icon: Icons.monitor_weight_outlined,
-                      title: "Weight",
-                      value: "-- kg",
+                  Expanded(
+                    child: _OverviewCard(
+                      icon: Icons.local_fire_department,
+                      title: "Current Streak",
+                      value: "0 days",
+                      subtitle: "Keep going",
                     ),
                   ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              const Text(
+                "This Week",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              _buildWeeklyProgress(),
+
+              const SizedBox(height: 28),
+
+              const Row(
+                children: [
+                  Text(
+                    "Recent Activity",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Spacer(),
+                  Icon(Icons.history, color: Colors.white38, size: 21),
                 ],
               ),
 
               const SizedBox(height: 15),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: DashboardCard(
-                      icon: Icons.calculate_outlined,
-                      title: "BMI",
-                      value: "--",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const BmiCalculatorScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+              _buildRecentActivity(),
 
-                  const SizedBox(width: 15),
-
-                  const Expanded(
-                    child: DashboardCard(
-                      icon: Icons.fitness_center,
-                      title: "Workouts",
-                      value: "0",
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                ),
-                child: const Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Color(0xFF22C55E),
-                      child: Icon(Icons.trending_up, color: Colors.white),
-                    ),
-
-                    SizedBox(width: 15),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Keep Moving!",
-                            style: TextStyle(
-                              color: Color(0xFF14532D),
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          SizedBox(height: 4),
-
-                          Text(
-                            "Your weekly fitness progress will appear here.",
-                            style: TextStyle(
-                              color: Color(0xFF166534),
-                              fontSize: 13,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildFitnessSummary() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF052E16), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: primary.withOpacity(0.2)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.insights, color: primary, size: 25),
+              SizedBox(width: 10),
+              Text(
+                "Your Fitness Today",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 8),
+
+          Text(
+            "A quick summary of your latest health metrics.",
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+
+          SizedBox(height: 22),
+
+          Row(
+            children: [
+              Expanded(
+                child: _HealthMetric(
+                  icon: Icons.calculate_outlined,
+                  title: "BMI",
+                  value: "--",
+                ),
+              ),
+
+              SizedBox(width: 10),
+
+              Expanded(
+                child: _HealthMetric(
+                  icon: Icons.monitor_weight_outlined,
+                  title: "Weight",
+                  value: "-- kg",
+                ),
+              ),
+
+              SizedBox(width: 10),
+
+              Expanded(
+                child: _HealthMetric(
+                  icon: Icons.local_fire_department_outlined,
+                  title: "Calories",
+                  value: "-- kcal",
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyProgress() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Text(
+                "Weekly Workout Goal",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Spacer(),
+              Text(
+                "0 / 5",
+                style: TextStyle(
+                  color: primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 15),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: const LinearProgressIndicator(
+              value: 0,
+              minHeight: 9,
+              backgroundColor: Color(0xFF1E293B),
+              valueColor: AlwaysStoppedAnimation<Color>(primary),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _WeekDay(day: "M"),
+              _WeekDay(day: "T"),
+              _WeekDay(day: "W"),
+              _WeekDay(day: "T"),
+              _WeekDay(day: "F"),
+              _WeekDay(day: "S"),
+              _WeekDay(day: "S"),
+            ],
+          ),
+
+          const SizedBox(height: 15),
+
+          const Text(
+            "Complete workouts to track your weekly consistency.",
+            style: TextStyle(color: Colors.white38, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.history_toggle_off, color: Colors.white30, size: 45),
+
+          SizedBox(height: 13),
+
+          Text(
+            "No recent activity",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          SizedBox(height: 6),
+
+          Text(
+            "Your latest workouts, health updates and fitness activity will appear here.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class DashboardCard extends StatelessWidget {
+class _HealthMetric extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
-  final VoidCallback? onTap;
 
-  const DashboardCard({
-    super.key,
+  const _HealthMetric({
     required this.icon,
     required this.title,
     required this.value,
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 15),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFF22C55E), size: 21),
+
+          const SizedBox(height: 8),
+
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: const Color(0xFF22C55E), size: 23),
-              ),
 
-              const SizedBox(height: 15),
+          const SizedBox(height: 4),
 
-              Text(
-                title,
-                style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-              ),
+          Text(
+            title,
+            style: const TextStyle(color: Colors.white38, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-              const SizedBox(height: 5),
+class _OverviewCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final String subtitle;
 
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+  const _OverviewCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
 
-                  if (onTap != null)
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Color(0xFF94A3B8),
-                      size: 14,
-                    ),
-                ],
-              ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF22C55E).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: const Color(0xFF22C55E), size: 21),
+          ),
+
+          const SizedBox(height: 15),
+
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white30, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekDay extends StatelessWidget {
+  final String day;
+
+  const _WeekDay({required this.day});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E293B),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.circle_outlined,
+            color: Colors.white24,
+            size: 15,
           ),
         ),
-      ),
+
+        const SizedBox(height: 6),
+
+        Text(day, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+      ],
     );
   }
 }

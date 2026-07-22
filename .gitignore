@@ -120,3 +120,7 @@ migrate_working_dir/
 *.7z
 *.tar
 *.gz
+
+server/.env
+server/venv/
+server/firebase-service-account.json
