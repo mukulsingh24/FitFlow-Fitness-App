@@ -14,11 +14,9 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
   final ScrollController _scrollController = ScrollController();
 
   final TextEditingController ageController = TextEditingController();
-  final TextEditingController feetController = TextEditingController();
-  final TextEditingController inchesController = TextEditingController();
+  final TextEditingController heightController = TextEditingController();
   final TextEditingController weightController = TextEditingController();
 
-  // ---- Palette (matches HomeScreen) ----
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
@@ -111,8 +109,7 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
   @override
   void dispose() {
     ageController.dispose();
-    feetController.dispose();
-    inchesController.dispose();
+    heightController.dispose();
     weightController.dispose();
     _scrollController.dispose();
     _entrance.dispose();
@@ -133,18 +130,11 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     }
 
     setState(() => isCalculating = true);
-
-    // Brief tactile delay so the button press feels responsive rather than instant.
     await Future.delayed(const Duration(milliseconds: 500));
 
     final int age = int.parse(ageController.text.trim());
-    final double feet = double.parse(feetController.text.trim());
-    final double inches = double.parse(inchesController.text.trim());
-    final double weightPounds = double.parse(weightController.text.trim());
-
-    final double totalInches = (feet * 12) + inches;
-    final double heightCm = totalInches * 2.54;
-    final double weightKg = weightPounds * 0.453592;
+    final double heightCm = double.parse(heightController.text.trim());
+    final double weightKg = double.parse(weightController.text.trim());
 
     double bmr;
     if (selectedGender == "Male") {
@@ -161,8 +151,6 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     } else if (selectedGoal == "Gain Weight") {
       target = maintenance + 500;
     }
-
-    // Keep the target within a safe, realistic floor.
     if (target < 1200) target = 1200;
 
     if (!mounted) return;
@@ -187,8 +175,8 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
 
   void resetCalculator() {
     ageController.clear();
-    feetController.clear();
-    inchesController.clear();
+    heightController.dispose();
+    weightController.dispose();
     weightController.clear();
 
     setState(() {
@@ -275,8 +263,6 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     );
   }
 
-  // ---------------- APP BAR ----------------
-
   Widget _buildAppBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 10, 20, 6),
@@ -333,8 +319,6 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     );
   }
 
-  // ---------------- HEADER ----------------
-
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -386,8 +370,6 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
       ),
     );
   }
-
-  // ---------------- FORM CARD ----------------
 
   Widget _buildCalculatorCard() {
     return Container(
@@ -446,31 +428,18 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
               children: [
                 Expanded(
                   child: _buildNumberInput(
-                    controller: feetController,
-                    label: "Feet",
-                    hint: "5",
+                    controller: heightController,
+                    label: "Height (cm)",
+                    hint: "e.g. 165",
                     icon: Icons.height_rounded,
+                    allowDecimal: true,
                     validator: (value) {
-                      final int? feet = int.tryParse(value ?? "");
-                      if (feet == null || feet < 3 || feet > 8) {
-                        return "3–8 only";
+                      final double? height = double.tryParse(value ?? "");
+
+                      if (height == null || height < 100 || height > 250) {
+                        return "Enter a valid height between 100–250 cm";
                       }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildNumberInput(
-                    controller: inchesController,
-                    label: "Inches",
-                    hint: "10",
-                    icon: Icons.straighten_rounded,
-                    validator: (value) {
-                      final int? inches = int.tryParse(value ?? "");
-                      if (inches == null || inches < 0 || inches > 11) {
-                        return "0–11 only";
-                      }
+
                       return null;
                     },
                   ),
@@ -481,15 +450,17 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
             const SizedBox(height: 18),
             _buildNumberInput(
               controller: weightController,
-              label: "Weight (pounds)",
-              hint: "e.g. 165",
+              label: "Weight (kg)",
+              hint: "e.g. 60",
               icon: Icons.monitor_weight_outlined,
               allowDecimal: true,
               validator: (value) {
                 final double? weight = double.tryParse(value ?? "");
-                if (weight == null || weight < 60 || weight > 660) {
-                  return "Enter a weight between 60–660 lbs";
+
+                if (weight == null || weight < 25 || weight > 300) {
+                  return "Enter a valid weight between 25–300 kg";
                 }
+
                 return null;
               },
             ),
@@ -779,14 +750,11 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     );
   }
 
-  // ---------------- RESULT ----------------
-
   Widget _buildResultCard({Key? key}) {
     final double target = targetCalories!;
     final double maintenance = maintenanceCalories!;
     final double bmr = bmrValue!;
 
-    // Macro split: 30% protein, 40% carbs, 30% fat.
     final int proteinG = ((target * 0.30) / 4).round();
     final int carbsG = ((target * 0.40) / 4).round();
     final int fatG = ((target * 0.30) / 9).round();

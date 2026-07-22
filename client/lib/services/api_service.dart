@@ -89,6 +89,16 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>?> getLatestBMI() async {
+    final history = await getBMIHistory();
+
+    if (history.isEmpty) {
+      return null;
+    }
+
+    return Map<String, dynamic>.from(history.first);
+  }
+
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final User? user = FirebaseAuth.instance.currentUser;
 

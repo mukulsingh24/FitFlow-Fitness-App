@@ -4,12 +4,55 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'notifications.dart';
 import '../services/api_service.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   static const Color primary = Color(0xFF22C55E);
   static const Color background = Color(0xFF020617);
   static const Color cardColor = Color(0xFF0F172A);
+
+  double? latestBmi;
+  double? latestWeight;
+  bool isLoadingHealth = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLatestHealthData();
+  }
+
+  Future<void> _loadLatestHealthData() async {
+    try {
+      final data = await ApiService.getLatestBMI();
+
+      if (!mounted) return;
+
+      if (data != null) {
+        setState(() {
+          latestBmi = (data['bmi'] as num?)?.toDouble();
+          latestWeight = (data['weight'] as num?)?.toDouble();
+          isLoadingHealth = false;
+        });
+      } else {
+        setState(() {
+          isLoadingHealth = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('LATEST BMI ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingHealth = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +276,7 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: primary.withOpacity(0.2)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -266,23 +309,31 @@ class DashboardScreen extends StatelessWidget {
                 child: _HealthMetric(
                   icon: Icons.calculate_outlined,
                   title: "BMI",
-                  value: "--",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestBmi != null
+                      ? latestBmi!.toStringAsFixed(1)
+                      : "--",
                 ),
               ),
 
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
 
               Expanded(
                 child: _HealthMetric(
                   icon: Icons.monitor_weight_outlined,
                   title: "Weight",
-                  value: "-- kg",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestWeight != null
+                      ? "${latestWeight!.toStringAsFixed(1)} kg"
+                      : "-- kg",
                 ),
               ),
 
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-              Expanded(
+              const Expanded(
                 child: _HealthMetric(
                   icon: Icons.local_fire_department_outlined,
                   title: "Calories",
