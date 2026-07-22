@@ -16,6 +16,8 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
 
   double? bmi;
   String bmiCategory = "";
+  List<dynamic> bmiHistory = [];
+  bool isLoadingHistory = true;
 
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
@@ -36,6 +38,33 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
     heightController.dispose();
     weightController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadBMIHistory();
+  }
+
+  Future<void> loadBMIHistory() async {
+    try {
+      final history = await ApiService.getBMIHistory();
+
+      if (!mounted) return;
+
+      setState(() {
+        bmiHistory = history;
+        isLoadingHistory = false;
+      });
+    } catch (e) {
+      debugPrint("BMI HISTORY ERROR: $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingHistory = false;
+      });
+    }
   }
 
   Future<void> calculateBMI() async {
@@ -63,15 +92,15 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       category = "Obese";
     }
 
-    // Immediately show result in UI
     setState(() {
       bmi = localBmi;
       bmiCategory = category;
     });
-
-    // Now try saving it to backend
     try {
       await ApiService.saveBMI(weight: weight, heightCm: heightCm);
+
+      // Refresh BMI history after successful save
+      await loadBMIHistory();
 
       if (!mounted) return;
 
@@ -87,8 +116,8 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("BMI calculated, but could not be saved."),
+        SnackBar(
+          content: Text("BMI calculated, but could not be saved: $e"),
           backgroundColor: Colors.orange,
         ),
       );
@@ -146,6 +175,8 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
                       _buildResultCard(),
                     ],
                     const SizedBox(height: 20),
+                    _buildBMIHistory(),
+                    const SizedBox(height: 24),
                     _buildBmiGuide(),
                     const SizedBox(height: 24),
                   ],
@@ -465,6 +496,121 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBMIHistory() {
+    if (isLoadingHistory) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (bmiHistory.isEmpty) {
+      return const Center(
+        child: Text(
+          "No BMI history yet",
+          style: TextStyle(color: textMuted, fontSize: 14),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "BMI History",
+          style: TextStyle(
+            color: textDark,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        const Text(
+          "Track how your BMI changes over time.",
+          style: TextStyle(color: textMuted, fontSize: 13),
+        ),
+
+        const SizedBox(height: 16),
+
+        ...bmiHistory.map((record) {
+          final double bmiValue = (record['bmi'] as num).toDouble();
+
+          final double weight = (record['weight'] as num).toDouble();
+
+          final String date =
+              record['created_at']?.toString().split('T').first ?? "";
+
+          String category;
+
+          if (bmiValue < 18.5) {
+            category = "Underweight";
+          } else if (bmiValue < 25) {
+            category = "Normal Weight";
+          } else if (bmiValue < 30) {
+            category = "Overweight";
+          } else {
+            category = "Obese";
+          }
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.monitor_weight_outlined,
+                    color: primaryDark,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "BMI ${bmiValue.toStringAsFixed(1)}",
+                        style: const TextStyle(
+                          color: textDark,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      Text(
+                        "$category • ${weight.toStringAsFixed(1)} kg",
+                        style: const TextStyle(color: textMuted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Text(
+                  date,
+                  style: const TextStyle(color: textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 

@@ -126,3 +126,42 @@ def save_bmi(
         "category": category,
         "created_at": health_record.created_at,
     }
+@app.get("/health/bmi")
+def get_bmi_history(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    records = (
+        db.query(HealthRecord)
+        .filter(
+            HealthRecord.user_id == user.id,
+            HealthRecord.bmi.isnot(None),
+        )
+        .order_by(HealthRecord.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": record.id,
+            "weight": record.weight,
+            "height_cm": record.height_cm,
+            "bmi": record.bmi,
+            "created_at": record.created_at,
+        }
+        for record in records
+    ]
