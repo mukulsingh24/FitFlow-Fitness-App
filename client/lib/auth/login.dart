@@ -3,8 +3,8 @@ import './register.dart';
 import './forgot.dart';
 import './admin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../main/dashboard.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../main/main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } on FirebaseAuthException catch (e) {
       String message = "Login failed. Please try again.";
@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;

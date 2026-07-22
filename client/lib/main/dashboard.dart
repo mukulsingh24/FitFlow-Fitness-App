@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'calorie.dart';
 import '../auth/login.dart';
+import 'notifications.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -42,7 +43,24 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+
         actions: [
+          IconButton(
+            tooltip: "Notifications",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              );
+            },
+            icon: const Badge(
+              label: Text("2"),
+              child: Icon(
+                Icons.notifications_outlined,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: "Logout",
             onPressed: () {
