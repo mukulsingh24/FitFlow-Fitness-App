@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class CalorieCalculatorScreen extends StatefulWidget {
   const CalorieCalculatorScreen({super.key});
@@ -161,6 +162,38 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
       targetCalories = target;
       isCalculating = false;
     });
+    try {
+      final result = await ApiService.saveCalories(
+        age: age,
+        gender: selectedGender,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        activityLevel: selectedActivity,
+        goal: selectedGoal,
+      );
+
+      debugPrint("CALORIE SAVED: $result");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Calorie calculation saved successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      debugPrint("CALORIE SAVE ERROR: $e");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Calories calculated, but could not be saved: $e"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {

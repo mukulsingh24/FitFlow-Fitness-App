@@ -109,3 +109,34 @@ class WorkoutSet(Base):
         "Exercise",
         back_populates="sets"
     )
+
+class CalorieRecord(Base):
+    __tablename__ = "calorie_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    age = Column(Integer, nullable=False)
+    gender = Column(String, nullable=False)
+
+    height_cm = Column(Float, nullable=False)
+    weight_kg = Column(Float, nullable=False)
+
+    activity_level = Column(String, nullable=False)
+    goal = Column(String, nullable=False)
+
+    bmr = Column(Float, nullable=False)
+    maintenance_calories = Column(Float, nullable=False)
+    target_calories = Column(Float, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    user = relationship("User")

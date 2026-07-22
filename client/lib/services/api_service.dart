@@ -126,4 +126,49 @@ class ApiService {
 
     throw Exception('API Error ${response.statusCode}: ${response.body}');
   }
+
+  static Future<Map<String, dynamic>> saveCalories({
+    required int age,
+    required String gender,
+    required double heightCm,
+    required double weightKg,
+    required String activityLevel,
+    required String goal,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/health/calories'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'age': age,
+        'gender': gender,
+        'height_cm': heightCm,
+        'weight_kg': weightKg,
+        'activity_level': activityLevel,
+        'goal': goal,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception(
+      'Failed to save calories (${response.statusCode}): ${response.body}',
+    );
+  }
 }
