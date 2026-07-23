@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'bmi.dart';
 import 'calorie.dart';
+import '../services/api_service.dart';
 
-class HealthScreen extends StatelessWidget {
+class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
 
-  static const Color primary = Color(0xFF1DB954);
+  @override
+  State<HealthScreen> createState() => _HealthScreenState();
+}
+
+class _HealthScreenState extends State<HealthScreen> {
+  // static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
   static const Color surface = Color(0xFFFFFFFF);
@@ -14,6 +20,47 @@ class HealthScreen extends StatelessWidget {
   static const Color textMuted = Color(0xFF6B7570);
   static const Color softMint = Color(0xFFE4F5E8);
   static const Color border = Color(0xFFE7ECE8);
+
+  double? latestBmi;
+  double? latestWeight;
+  double? latestCalories;
+  bool isLoadingHealth = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHealthData();
+  }
+
+  Future<void> _loadHealthData() async {
+    try {
+      final bmiData = await ApiService.getLatestBMI();
+      final calorieData = await ApiService.getLatestCalories();
+
+      if (!mounted) return;
+
+      setState(() {
+        if (bmiData != null) {
+          latestBmi = (bmiData['bmi'] as num?)?.toDouble();
+          latestWeight = (bmiData['weight'] as num?)?.toDouble();
+        }
+
+        if (calorieData != null) {
+          latestCalories = (calorieData['target_calories'] as num?)?.toDouble();
+        }
+
+        isLoadingHealth = false;
+      });
+    } catch (e) {
+      debugPrint("HEALTH DATA ERROR: $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingHealth = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,13 +119,17 @@ class HealthScreen extends StatelessWidget {
                 description:
                     "Calculate your Body Mass Index using your height and weight.",
                 buttonText: "Calculate BMI",
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const BmiCalculatorScreen(),
                     ),
                   );
+
+                  if (!mounted) return;
+
+                  await _loadHealthData();
                 },
               ),
 
@@ -90,13 +141,17 @@ class HealthScreen extends StatelessWidget {
                 description:
                     "Estimate your daily calorie needs based on your body and activity.",
                 buttonText: "Calculate Calories",
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const CalorieCalculatorScreen(),
                     ),
                   );
+
+                  if (!mounted) return;
+
+                  await _loadHealthData();
                 },
               ),
 
@@ -187,18 +242,43 @@ class HealthScreen extends StatelessWidget {
             style: TextStyle(color: textMuted, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 18),
-          const Row(
+          Row(
             children: [
               Expanded(
-                child: _SummaryItem(title: "BMI", value: "--"),
+                child: _SummaryItem(
+                  title: "BMI",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestBmi != null
+                      ? latestBmi!.toStringAsFixed(1)
+                      : "--",
+                ),
               ),
-              SizedBox(width: 10),
+
+              const SizedBox(width: 10),
+
               Expanded(
-                child: _SummaryItem(title: "Calories", value: "-- kcal"),
+                child: _SummaryItem(
+                  title: "Calories",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestCalories != null
+                      ? "${latestCalories!.round()} kcal"
+                      : "-- kcal",
+                ),
               ),
-              SizedBox(width: 10),
+
+              const SizedBox(width: 10),
+
               Expanded(
-                child: _SummaryItem(title: "Weight", value: "-- kg"),
+                child: _SummaryItem(
+                  title: "Weight",
+                  value: isLoadingHealth
+                      ? "..."
+                      : latestWeight != null
+                      ? "${latestWeight!.toStringAsFixed(1)} kg"
+                      : "-- kg",
+                ),
               ),
             ],
           ),

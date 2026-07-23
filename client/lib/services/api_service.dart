@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -10,52 +12,98 @@ class ApiService {
     required double weight,
     required double heightCm,
   }) async {
-    print('STEP 1: saveBMI called');
-
     final User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      print('STEP ERROR: User is null');
-      throw Exception('User is not logged in');
+      throw Exception('Authentication required. Please log in again.');
     }
-
-    print('STEP 2: User found: ${user.email}');
 
     final String? token = await user.getIdToken();
 
-    if (token == null) {
-      print('STEP ERROR: Firebase token is null');
-      throw Exception('Unable to get Firebase ID token');
+    if (token == null || token.isEmpty) {
+      throw Exception(
+        'Unable to authenticate your account. Please log in again.',
+      );
     }
 
-    print('STEP 3: Firebase token received');
-    print('STEP 4: Sending POST to $baseUrl/health/bmi');
-    print('DATA: weight=$weight, heightCm=$heightCm');
-
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/health/bmi'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'weight': weight, 'height_cm': heightCm}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/health/bmi'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'weight': weight, 'height_cm': heightCm}),
+          )
+          .timeout(const Duration(seconds: 15));
 
-      print('STEP 5: Response received');
-      print('STATUS: ${response.statusCode}');
-      print('BODY: ${response.body}');
+      final dynamic decodedBody;
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+      try {
+        decodedBody = jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Invalid response received from the server.');
       }
 
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (decodedBody is Map<String, dynamic>) {
+          return decodedBody;
+        }
+
+        throw Exception('Unexpected response format from the server.');
+      }
+
+      String message = 'Unable to save BMI.';
+
+      if (decodedBody is Map<String, dynamic>) {
+        final detail = decodedBody['detail'];
+
+        if (detail != null) {
+          message = detail.toString();
+        }
+      }
+
+      switch (response.statusCode) {
+        case 401:
+          throw Exception('Your session has expired. Please log in again.');
+
+        case 403:
+          throw Exception('You are not authorized to perform this action.');
+
+        case 404:
+          throw Exception(
+            message == 'Unable to save BMI.'
+                ? 'User account was not found.'
+                : message,
+          );
+
+        case 422:
+          throw Exception('Please check your height and weight values.');
+
+        case 500:
+          throw Exception('Server error. Please try again later.');
+
+        default:
+          throw Exception(message);
+      }
+    } on TimeoutException {
       throw Exception(
-        'Failed to save BMI (${response.statusCode}): ${response.body}',
+        'The server is taking too long to respond. Please try again.',
       );
+    } on SocketException {
+      throw Exception(
+        'Unable to connect to the server. Check your internet connection.',
+      );
+    } on http.ClientException {
+      throw Exception('Unable to communicate with the server.');
     } catch (e) {
-      print('HTTP POST ERROR: $e');
-      rethrow;
+      if (e is Exception) {
+        rethrow;
+      }
+
+      throw Exception('Something went wrong while saving your BMI.');
     }
   }
 
