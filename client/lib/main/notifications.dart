@@ -24,6 +24,15 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  static const Color primary = Color(0xFF1DB954);
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color scaffoldBg = Color(0xFFF6F8F6);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF16201C);
+  static const Color textMuted = Color(0xFF6B7570);
+  static const Color softMint = Color(0xFFE4F5E8);
+  static const Color border = Color(0xFFE7ECE8);
+
   final List<NotificationItem> notifications = [
     NotificationItem(
       title: "Time to Train",
@@ -63,38 +72,57 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF020617),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF020617),
-        foregroundColor: Colors.white,
+        backgroundColor: scaffoldBg,
+        foregroundColor: textDark,
+        elevation: 0,
         title: const Text(
           "Notifications",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         actions: [
           TextButton(
             onPressed: markAllAsRead,
             child: const Text(
               "Read all",
-              style: TextStyle(color: Color(0xFF22C55E)),
+              style: TextStyle(color: primaryDark, fontWeight: FontWeight.w700),
             ),
           ),
         ],
       ),
       body: notifications.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.notifications_none,
-                    color: Colors.white30,
-                    size: 60,
+                  Container(
+                    width: 70,
+                    height: 70,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: softMint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: primaryDark,
+                      size: 32,
+                    ),
                   ),
-                  SizedBox(height: 15),
-                  Text(
+                  const SizedBox(height: 16),
+                  const Text(
                     "No notifications",
-                    style: TextStyle(color: Colors.white70, fontSize: 17),
+                    style: TextStyle(
+                      color: textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "You're all caught up.",
+                    style: TextStyle(color: textMuted, fontSize: 13),
                   ),
                 ],
               ),
@@ -102,7 +130,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: notifications.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final notification = notifications[index];
 
@@ -116,10 +144,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 25),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: const Color(0xFFEF6C6C),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.white,
+                    ),
                   ),
                   child: InkWell(
                     onTap: () {
@@ -131,14 +162,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: notification.isRead
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF052E16),
+                        color: notification.isRead ? surface : softMint,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: notification.isRead
-                              ? Colors.white10
-                              : const Color(0xFF22C55E).withOpacity(0.35),
+                              ? border
+                              : primary.withOpacity(0.35),
                         ),
                       ),
                       child: Row(
@@ -148,13 +177,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             width: 46,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E).withOpacity(0.15),
+                              color: notification.isRead ? scaffoldBg : surface,
                               borderRadius: BorderRadius.circular(13),
                             ),
-                            child: Icon(
-                              notification.icon,
-                              color: const Color(0xFF22C55E),
-                            ),
+                            child: Icon(notification.icon, color: primaryDark),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -167,7 +193,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       child: Text(
                                         notification.title,
                                         style: const TextStyle(
-                                          color: Colors.white,
+                                          color: textDark,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
                                         ),
@@ -178,7 +204,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         width: 8,
                                         height: 8,
                                         decoration: const BoxDecoration(
-                                          color: Color(0xFF22C55E),
+                                          color: primary,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -188,15 +214,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 Text(
                                   notification.message,
                                   style: const TextStyle(
-                                    color: Colors.white60,
+                                    color: textMuted,
                                     height: 1.4,
+                                    fontSize: 13,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   notification.time,
                                   style: const TextStyle(
-                                    color: Colors.white38,
+                                    color: textMuted,
                                     fontSize: 11,
                                   ),
                                 ),

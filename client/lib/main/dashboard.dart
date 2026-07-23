@@ -12,9 +12,14 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  static const Color primary = Color(0xFF22C55E);
-  static const Color background = Color(0xFF020617);
-  static const Color cardColor = Color(0xFF0F172A);
+  static const Color primary = Color(0xFF1DB954);
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color scaffoldBg = Color(0xFFF6F8F6);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF16201C);
+  static const Color textMuted = Color(0xFF6B7570);
+  static const Color softMint = Color(0xFFE4F5E8);
+  static const Color border = Color(0xFFE7ECE8);
 
   double? latestBmi;
   double? latestWeight;
@@ -68,21 +73,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String userEmail = user?.email ?? "No email available";
 
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: background,
+        backgroundColor: scaffoldBg,
         elevation: 0,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.fitness_center, color: primary, size: 27),
-            SizedBox(width: 10),
-            Text(
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: primary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.fitness_center,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
               "FitFlow",
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+                color: textDark,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -97,8 +113,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
             icon: const Badge(
+              backgroundColor: primary,
               label: Text("2"),
-              child: Icon(Icons.notifications_outlined, color: Colors.white),
+              child: Icon(Icons.notifications_outlined, color: textDark),
             ),
           ),
           const SizedBox(width: 8),
@@ -106,16 +123,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 "Welcome back, $userName 👋",
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
 
@@ -123,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               Text(
                 userEmail,
-                style: const TextStyle(color: Colors.white38, fontSize: 13),
+                style: const TextStyle(color: textMuted, fontSize: 13),
               ),
 
               const SizedBox(height: 20),
@@ -131,7 +149,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: () async {
                     try {
                       final data = await ApiService.getCurrentUser();
@@ -143,7 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Backend connected: ${data['email']}'),
-                          backgroundColor: const Color(0xFF22C55E),
+                          backgroundColor: primaryDark,
                         ),
                       );
                     } catch (e) {
@@ -154,14 +172,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Backend error: $e'),
-                          backgroundColor: Colors.red,
+                          backgroundColor: const Color(0xFFEF6C6C),
                         ),
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primary,
-                    foregroundColor: Colors.white,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryDark,
+                    side: const BorderSide(color: border),
+                    backgroundColor: surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -174,29 +193,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 24),
 
               _buildFitnessSummary(),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
               const Text(
                 "Quick Overview",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
 
               const Text(
                 "Your fitness activity at a glance.",
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: textMuted, fontSize: 13),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
               const Row(
                 children: [
@@ -222,43 +241,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 26),
 
               const Text(
                 "This Week",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 14),
 
               _buildWeeklyProgress(),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 26),
 
               const Row(
                 children: [
                   Text(
                     "Recent Activity",
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      color: textDark,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.history, color: Colors.white38, size: 21),
+                  Icon(Icons.history_rounded, color: textMuted, size: 20),
                 ],
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 14),
 
               _buildRecentActivity(),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -271,40 +290,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF052E16), Color(0xFF0F172A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: softMint,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: primary.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              Icon(Icons.insights, color: primary, size: 25),
+              Icon(Icons.insights_rounded, color: primaryDark, size: 22),
               SizedBox(width: 10),
               Text(
                 "Your Fitness Today",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
 
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
 
-          Text(
+          const Text(
             "A quick summary of your latest health metrics.",
-            style: TextStyle(color: Colors.white54, fontSize: 12),
+            style: TextStyle(color: textMuted, fontSize: 12),
           ),
 
-          SizedBox(height: 22),
+          const SizedBox(height: 20),
 
           Row(
             children: [
@@ -359,9 +373,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,16 +385,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 "Weekly Workout Goal",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: textDark,
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               Spacer(),
               Text(
                 "0 / 5",
                 style: TextStyle(
-                  color: primary,
+                  color: primaryDark,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -395,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const LinearProgressIndicator(
               value: 0,
               minHeight: 9,
-              backgroundColor: Color(0xFF1E293B),
+              backgroundColor: scaffoldBg,
               valueColor: AlwaysStoppedAnimation<Color>(primary),
             ),
           ),
@@ -419,7 +433,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const Text(
             "Complete workouts to track your weekly consistency.",
-            style: TextStyle(color: Colors.white38, fontSize: 11),
+            style: TextStyle(color: textMuted, fontSize: 11),
           ),
         ],
       ),
@@ -431,31 +445,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: border),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.history_toggle_off, color: Colors.white30, size: 45),
-
-          SizedBox(height: 13),
-
-          Text(
-            "No recent activity",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+          Container(
+            width: 60,
+            height: 60,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: scaffoldBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.history_toggle_off_rounded,
+              color: textMuted,
+              size: 28,
             ),
           ),
 
-          SizedBox(height: 6),
+          const SizedBox(height: 14),
 
-          Text(
+          const Text(
+            "No recent activity",
+            style: TextStyle(
+              color: textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          const Text(
             "Your latest workouts, health updates and fitness activity will appear here.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
+            style: TextStyle(color: textMuted, fontSize: 12, height: 1.5),
           ),
         ],
       ),
@@ -474,17 +501,22 @@ class _HealthMetric extends StatelessWidget {
     required this.value,
   });
 
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF16201C);
+  static const Color textMuted = Color(0xFF6B7570);
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 15),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.18),
+        color: surface,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xFF22C55E), size: 21),
+          Icon(icon, color: primaryDark, size: 20),
 
           const SizedBox(height: 8),
 
@@ -492,7 +524,7 @@ class _HealthMetric extends StatelessWidget {
             value,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white,
+              color: textDark,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -500,10 +532,7 @@ class _HealthMetric extends StatelessWidget {
 
           const SizedBox(height: 4),
 
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white38, fontSize: 10),
-          ),
+          Text(title, style: const TextStyle(color: textMuted, fontSize: 10)),
         ],
       ),
     );
@@ -523,35 +552,43 @@ class _OverviewCard extends StatelessWidget {
     required this.subtitle,
   });
 
+  //static const Color primary = Color(0xFF1DB954);
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF16201C);
+  static const Color textMuted = Color(0xFF6B7570);
+  static const Color softMint = Color(0xFFE4F5E8);
+  static const Color border = Color(0xFFE7ECE8);
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: surface,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFF22C55E).withOpacity(0.12),
+              color: softMint,
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: const Color(0xFF22C55E), size: 21),
+            child: Icon(icon, color: primaryDark, size: 19),
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
 
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 21,
+              color: textDark,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -561,17 +598,17 @@ class _OverviewCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white70,
+              color: textDark,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
 
           Text(
             subtitle,
-            style: const TextStyle(color: Colors.white30, fontSize: 10),
+            style: const TextStyle(color: textMuted, fontSize: 10),
           ),
         ],
       ),
@@ -584,6 +621,9 @@ class _WeekDay extends StatelessWidget {
 
   const _WeekDay({required this.day});
 
+  static const Color scaffoldBg = Color(0xFFF6F8F6);
+  static const Color textMuted = Color(0xFF6B7570);
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -593,19 +633,15 @@ class _WeekDay extends StatelessWidget {
           height: 32,
           alignment: Alignment.center,
           decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
+            color: scaffoldBg,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.circle_outlined,
-            color: Colors.white24,
-            size: 15,
-          ),
+          child: const Icon(Icons.circle_outlined, color: textMuted, size: 15),
         ),
 
         const SizedBox(height: 6),
 
-        Text(day, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(day, style: const TextStyle(color: textMuted, fontSize: 10)),
       ],
     );
   }

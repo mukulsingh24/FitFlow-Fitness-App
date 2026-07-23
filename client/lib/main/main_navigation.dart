@@ -16,6 +16,13 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  //static const Color primary = Color(0xFF1DB954);
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color scaffoldBg = Color(0xFFF6F8F6);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textMuted = Color(0xFF6B7570);
+  static const Color softMint = Color(0xFFE4F5E8);
+
   final List<Widget> _screens = const [
     DashboardScreen(),
     HealthScreen(),
@@ -27,68 +34,97 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: scaffoldBg,
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          height: 72,
-          backgroundColor: const Color(0xFF0F172A),
-          indicatorColor: const Color(0xFF22C55E).withOpacity(0.18),
-          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                color: Color(0xFF22C55E),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              );
-            }
-
-            return const TextStyle(color: Colors.white54, fontSize: 12);
-          }),
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined, color: Colors.white54),
-              selectedIcon: Icon(Icons.home, color: Color(0xFF22C55E)),
-              label: "Home",
-            ),
-
-            NavigationDestination(
-              icon: Icon(Icons.favorite_border, color: Colors.white54),
-              selectedIcon: Icon(Icons.favorite, color: Color(0xFF22C55E)),
-              label: "Health",
-            ),
-
-            NavigationDestination(
-              icon: Icon(Icons.fitness_center_outlined, color: Colors.white54),
-              selectedIcon: Icon(
-                Icons.fitness_center,
-                color: Color(0xFF22C55E),
-              ),
-              label: "Workout",
-            ),
-
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined, color: Colors.white54),
-              selectedIcon: Icon(
-                Icons.calendar_month,
-                color: Color(0xFF22C55E),
-              ),
-              label: "Activity",
-            ),
-
-            NavigationDestination(
-              icon: Icon(Icons.person_outline, color: Colors.white54),
-              selectedIcon: Icon(Icons.person, color: Color(0xFF22C55E)),
-              label: "Profile",
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
             ),
           ],
+        ),
+        child: SafeArea(
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              height: 68,
+              backgroundColor: surface,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              indicatorColor: softMint,
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+                states,
+              ) {
+                if (states.contains(WidgetState.selected)) {
+                  return const TextStyle(
+                    color: primaryDark,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  );
+                }
+
+                return const TextStyle(
+                  color: textMuted,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                );
+              }),
+            ),
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined, color: textMuted),
+                  selectedIcon: Icon(Icons.home_rounded, color: primaryDark),
+                  label: "Home",
+                ),
+
+                NavigationDestination(
+                  icon: Icon(Icons.favorite_border_rounded, color: textMuted),
+                  selectedIcon: Icon(
+                    Icons.favorite_rounded,
+                    color: primaryDark,
+                  ),
+                  label: "Health",
+                ),
+
+                NavigationDestination(
+                  icon: Icon(Icons.fitness_center_outlined, color: textMuted),
+                  selectedIcon: Icon(
+                    Icons.fitness_center_rounded,
+                    color: primaryDark,
+                  ),
+                  label: "Workout",
+                ),
+
+                NavigationDestination(
+                  icon: Icon(Icons.calendar_month_outlined, color: textMuted),
+                  selectedIcon: Icon(
+                    Icons.calendar_month_rounded,
+                    color: primaryDark,
+                  ),
+                  label: "Activity",
+                ),
+
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded, color: textMuted),
+                  selectedIcon: Icon(Icons.person_rounded, color: primaryDark),
+                  label: "Profile",
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
