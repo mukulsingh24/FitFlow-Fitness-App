@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'health.dart';
 import 'workout.dart';
-import 'activity.dart';
 import 'profile.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -29,12 +28,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _currentIndex = index;
 
-      // Refresh Dashboard when Home is selected
       if (index == 0) {
         _dashboardRefreshKey++;
       }
 
-      // Refresh Health when Health is selected
       if (index == 1) {
         _healthRefreshKey++;
       }
@@ -49,8 +46,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       HealthScreen(key: ValueKey('health_$_healthRefreshKey')),
 
       const WorkoutScreen(),
-
-      const ActivityScreen(),
 
       const ProfileScreen(),
     ];
@@ -129,16 +124,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                   label: "Workout",
                 ),
-
-                NavigationDestination(
-                  icon: Icon(Icons.calendar_month_outlined, color: textMuted),
-                  selectedIcon: Icon(
-                    Icons.calendar_month_rounded,
-                    color: primaryDark,
-                  ),
-                  label: "Activity",
-                ),
-
                 NavigationDestination(
                   icon: Icon(Icons.person_outline_rounded, color: textMuted),
                   selectedIcon: Icon(Icons.person_rounded, color: primaryDark),
