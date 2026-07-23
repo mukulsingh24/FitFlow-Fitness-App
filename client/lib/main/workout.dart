@@ -1,20 +1,126 @@
 import 'package:flutter/material.dart';
 
-class Exercise {
+class WorkoutExercise {
   final String id;
   final String name;
+  final String workoutDay;
   final int sets;
   final int reps;
-  final double weight; // 0 = bodyweight
+  final double workingWeight;
+  final bool isCustom;
 
-  Exercise({
+  const WorkoutExercise({
     required this.id,
     required this.name,
+    required this.workoutDay,
     required this.sets,
     required this.reps,
-    required this.weight,
+    required this.workingWeight,
+    this.isCustom = false,
   });
+
+  WorkoutExercise copyWith({
+    String? name,
+    String? workoutDay,
+    int? sets,
+    int? reps,
+    double? workingWeight,
+    bool? isCustom,
+  }) {
+    return WorkoutExercise(
+      id: id,
+      name: name ?? this.name,
+      workoutDay: workoutDay ?? this.workoutDay,
+      sets: sets ?? this.sets,
+      reps: reps ?? this.reps,
+      workingWeight: workingWeight ?? this.workingWeight,
+      isCustom: isCustom ?? this.isCustom,
+    );
+  }
 }
+
+const Map<String, List<String>> workoutSplits = {
+  'Push Pull Legs': ['Push', 'Pull', 'Legs'],
+  'Body Part Split': ['Chest', 'Back', 'Arms', 'Abs', 'Rest'],
+};
+
+const Map<String, List<String>> exerciseLibrary = {
+  'Push': [
+    'Bench Press',
+    'Incline Dumbbell Press',
+    'Machine Shoulder Press',
+    'Dumbbell Lateral Raises',
+    'Rope Pushdown',
+    'Overhead Tricep Extension',
+    'Chest Fly',
+    'Push Ups',
+  ],
+
+  'Pull': [
+    'Wide Grip Lat Pulldown',
+    'Seated Cable Row',
+    'Chest Supported Row',
+    'EZ Bar Curl',
+    'Wrist Twist',
+    'Face Pull',
+    'Hammer Curl',
+    'Pull Ups',
+  ],
+
+  'Legs': [
+    'Squat',
+    'Wide Stance Leg Press',
+    'Leg Extension',
+    'Weighted Lunges',
+    'Calf Raises',
+    'Leg Curl',
+    'Romanian Deadlift',
+    'Hip Thrust',
+  ],
+
+  'Chest': [
+    'Bench Press',
+    'Incline Dumbbell Press',
+    'Decline Bench Press',
+    'Chest Press Machine',
+    'Cable Fly',
+    'Pec Deck',
+    'Push Ups',
+  ],
+
+  'Back': [
+    'Lat Pulldown',
+    'Seated Cable Row',
+    'Barbell Row',
+    'Chest Supported Row',
+    'Single Arm Dumbbell Row',
+    'Pull Ups',
+    'Face Pull',
+  ],
+
+  'Arms': [
+    'Barbell Curl',
+    'Dumbbell Curl',
+    'Hammer Curl',
+    'Preacher Curl',
+    'Rope Pushdown',
+    'Skull Crushers',
+    'Overhead Tricep Extension',
+  ],
+
+  'Abs': [
+    'Crunches',
+    'Cable Crunch',
+    'Leg Raises',
+    'Hanging Leg Raises',
+    'Plank',
+    'Russian Twist',
+    'Ab Wheel Rollout',
+  ],
+
+  // REST
+  'Rest': [],
+};
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
@@ -24,7 +130,6 @@ class WorkoutScreen extends StatefulWidget {
 }
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
-  // ---- Palette (matches the rest of the app) ----
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
@@ -35,20 +140,193 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   static const Color border = Color(0xFFE7ECE8);
   static const Color danger = Color(0xFFEF6C6C);
 
-  final List<Exercise> exercises = [];
+  String selectedSplit = 'Push Pull Legs';
+  String selectedWorkoutDay = 'Push';
 
-  int get totalSets => exercises.fold(0, (sum, e) => sum + e.sets);
+  final List<WorkoutExercise> exercises = [];
 
-  String get formattedDuration {
-    // Rough estimate: ~2.5 minutes per set, including rest.
-    final int minutes = (totalSets * 2.5).round();
-    if (minutes < 60) return "${minutes}m";
-    final int hours = minutes ~/ 60;
-    final int remaining = minutes % 60;
-    return remaining == 0 ? "${hours}h" : "${hours}h ${remaining}m";
+  List<String> get availableWorkoutDays {
+    return workoutSplits[selectedSplit] ?? [];
   }
 
-  void _addExercise(Exercise exercise) {
+  List<String> get availableExercises {
+    return exerciseLibrary[selectedWorkoutDay] ?? [];
+  }
+
+  int get totalSets {
+    return exercises.fold(0, (sum, exercise) => sum + exercise.sets);
+  }
+
+  int get totalReps {
+    return exercises.fold(
+      0,
+      (sum, exercise) => sum + (exercise.sets * exercise.reps),
+    );
+  }
+
+  void _finishWorkout() {
+    if (exercises.isEmpty) {
+      return;
+    }
+
+    // Temporary local implementation.
+    // Next step: replace this with FastAPI saveWorkout().
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$selectedWorkoutDay workout ready to save'),
+        backgroundColor: primaryDark,
+      ),
+    );
+  }
+
+  Widget _buildWorkoutGuidance() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.lightbulb_outline_rounded, color: primaryDark),
+              SizedBox(width: 10),
+              Text(
+                'Workout Guidance',
+                style: TextStyle(
+                  color: textDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          _buildGuidanceItem(
+            icon: Icons.verified_outlined,
+            title: 'Form First',
+            description:
+                'Prioritize proper technique before increasing weight.',
+          ),
+
+          _buildGuidanceItem(
+            icon: Icons.trending_up_rounded,
+            title: 'Progressive Overload',
+            description:
+                'Gradually improve your weight, reps, or overall performance.',
+          ),
+
+          _buildGuidanceItem(
+            icon: Icons.battery_5_bar_rounded,
+            title: 'Keep Reps in Reserve',
+            description:
+                'Aim to finish most working sets with about 2–3 good reps left.',
+          ),
+
+          _buildGuidanceItem(
+            icon: Icons.timer_outlined,
+            title: 'Rest & Recovery',
+            description:
+                'Take sufficient rest between sets and prioritize recovery between sessions.',
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuidanceItem({
+    required IconData icon,
+    required String title,
+    required String description,
+    bool showDivider = true,
+  }) {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: softMint,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: primaryDark, size: 19),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: textDark,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 3),
+
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: textMuted,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        if (showDivider) ...[
+          const SizedBox(height: 14),
+          const Divider(color: border, height: 1),
+          const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
+
+  void _changeSplit(String? split) {
+    if (split == null) return;
+
+    final days = workoutSplits[split];
+
+    if (days == null || days.isEmpty) return;
+
+    setState(() {
+      selectedSplit = split;
+      selectedWorkoutDay = days.first;
+
+      exercises.clear();
+    });
+  }
+
+  void _changeWorkoutDay(String? day) {
+    if (day == null) return;
+
+    setState(() {
+      selectedWorkoutDay = day;
+      exercises.clear();
+    });
+  }
+
+  void _addExercise(WorkoutExercise exercise) {
     setState(() {
       exercises.add(exercise);
     });
@@ -56,8 +334,103 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   void _deleteExercise(String id) {
     setState(() {
-      exercises.removeWhere((e) => e.id == id);
+      exercises.removeWhere((exercise) => exercise.id == id);
     });
+  }
+
+  Widget _buildTrainingSelector() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Training Plan',
+            style: TextStyle(
+              color: textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          const Text(
+            'Choose your workout split and today\'s training.',
+            style: TextStyle(color: textMuted, fontSize: 12.5),
+          ),
+
+          const SizedBox(height: 18),
+
+          DropdownButtonFormField<String>(
+            initialValue: selectedSplit,
+            decoration: InputDecoration(
+              labelText: 'Workout Split',
+              prefixIcon: const Icon(
+                Icons.account_tree_outlined,
+                color: primaryDark,
+              ),
+              filled: true,
+              fillColor: scaffoldBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: border),
+              ),
+            ),
+            items: workoutSplits.keys
+                .map(
+                  (split) => DropdownMenuItem<String>(
+                    value: split,
+                    child: Text(split),
+                  ),
+                )
+                .toList(),
+            onChanged: _changeSplit,
+          ),
+
+          const SizedBox(height: 14),
+
+          DropdownButtonFormField<String>(
+            key: ValueKey(selectedSplit),
+            initialValue: selectedWorkoutDay,
+            decoration: InputDecoration(
+              labelText: 'Today\'s Training',
+              prefixIcon: const Icon(
+                Icons.fitness_center_rounded,
+                color: primaryDark,
+              ),
+              filled: true,
+              fillColor: scaffoldBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: border),
+              ),
+            ),
+            items: availableWorkoutDays
+                .map(
+                  (day) =>
+                      DropdownMenuItem<String>(value: day, child: Text(day)),
+                )
+                .toList(),
+            onChanged: _changeWorkoutDay,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -94,6 +467,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildWorkoutHeader(),
+              const SizedBox(height: 20),
+              _buildTrainingSelector(),
               const SizedBox(height: 26),
 
               Row(
@@ -189,18 +564,42 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       title: "Sets",
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _WorkoutStat(
-                      icon: Icons.timer_outlined,
-                      value: exercises.isEmpty ? "0m" : formattedDuration,
-                      title: "Duration",
-                    ),
-                  ),
                 ],
               ),
+              const SizedBox(height: 24),
 
-              const SizedBox(height: 20),
+              if (selectedWorkoutDay != 'Rest')
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: exercises.isEmpty ? null : _finishWorkout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryDark,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: border,
+                      disabledForegroundColor: textMuted,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline_rounded),
+                    label: const Text(
+                      'FINISH WORKOUT',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 30),
+
+              _buildWorkoutGuidance(),
+
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -275,7 +674,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  Widget _buildExerciseCard(Exercise exercise) {
+  Widget _buildExerciseCard(WorkoutExercise exercise) {
     return Dismissible(
       key: ValueKey(exercise.id),
       direction: DismissDirection.endToStart,
@@ -329,14 +728,44 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    exercise.weight > 0
-                        ? "${exercise.sets} sets × ${exercise.reps} reps · ${exercise.weight.toStringAsFixed(exercise.weight % 1 == 0 ? 0 : 1)} kg"
-                        : "${exercise.sets} sets × ${exercise.reps} reps · Bodyweight",
+                    exercise.workingWeight > 0
+                        ? "${exercise.sets} sets × "
+                              "${exercise.reps} reps · "
+                              "${exercise.workingWeight.toStringAsFixed(exercise.workingWeight % 1 == 0 ? 0 : 1)} kg"
+                        : "${exercise.sets} sets × "
+                              "${exercise.reps} reps · Bodyweight",
                     style: const TextStyle(color: textMuted, fontSize: 12.5),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.category_outlined,
+                        size: 13,
+                        color: primaryDark,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        exercise.workoutDay,
+                        style: const TextStyle(
+                          color: primaryDark,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (exercise.isCustom) ...[
+                        const SizedBox(width: 8),
+                        const Text(
+                          "• Custom",
+                          style: TextStyle(color: textMuted, fontSize: 11),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             const Icon(Icons.swipe_left_alt_rounded, color: border, size: 18),
           ],
         ),
@@ -390,13 +819,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   void _showAddExerciseSheet(BuildContext context) {
+    if (selectedWorkoutDay == 'Rest') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Rest day selected. Recovery is part of your training.',
+          ),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const _AddExerciseSheet(),
+      builder: (context) => _AddExerciseSheet(
+        workoutDay: selectedWorkoutDay,
+        availableExercises: availableExercises,
+      ),
     ).then((result) {
-      if (result != null && result is Exercise) {
+      if (result != null && result is WorkoutExercise) {
         _addExercise(result);
       }
     });
@@ -404,7 +847,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 }
 
 class _AddExerciseSheet extends StatefulWidget {
-  const _AddExerciseSheet();
+  final String workoutDay;
+  final List<String> availableExercises;
+
+  const _AddExerciseSheet({
+    required this.workoutDay,
+    required this.availableExercises,
+  });
 
   @override
   State<_AddExerciseSheet> createState() => _AddExerciseSheetState();
@@ -420,33 +869,68 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
   static const Color border = Color(0xFFE7ECE8);
 
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController setsController = TextEditingController(text: "3");
+
+  final TextEditingController customExerciseController =
+      TextEditingController();
+
+  final TextEditingController setsController = TextEditingController(text: '3');
+
   final TextEditingController repsController = TextEditingController(
-    text: "10",
+    text: '10',
   );
+
   final TextEditingController weightController = TextEditingController();
+
+  String? selectedExercise;
+
+  bool isCustomExercise = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.availableExercises.isNotEmpty) {
+      selectedExercise = widget.availableExercises.first;
+    }
+  }
 
   @override
   void dispose() {
-    nameController.dispose();
+    customExerciseController.dispose();
     setsController.dispose();
     repsController.dispose();
     weightController.dispose();
+
     super.dispose();
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    final exercise = Exercise(
+    final String exerciseName;
+
+    if (isCustomExercise) {
+      exerciseName = customExerciseController.text.trim();
+    } else {
+      if (selectedExercise == null) {
+        return;
+      }
+
+      exerciseName = selectedExercise!;
+    }
+
+    final exercise = WorkoutExercise(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
-      name: nameController.text.trim(),
+      name: exerciseName,
+      workoutDay: widget.workoutDay,
       sets: int.parse(setsController.text.trim()),
       reps: int.parse(repsController.text.trim()),
-      weight: weightController.text.trim().isEmpty
+      workingWeight: weightController.text.trim().isEmpty
           ? 0
           : double.parse(weightController.text.trim()),
+      isCustom: isCustomExercise,
     );
 
     Navigator.pop(context, exercise);
@@ -459,141 +943,241 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
         decoration: const BoxDecoration(
           color: surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
         ),
-        padding: const EdgeInsets.fromLTRB(22, 14, 22, 26),
-        child: SafeArea(
-          top: false,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: border,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Add Exercise",
-                  style: TextStyle(
-                    color: textDark,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Log the exercise, sets, reps and weight used.",
-                  style: TextStyle(color: textMuted, fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-
-                _buildField(
-                  controller: nameController,
-                  label: "Exercise Name",
-                  hint: "e.g. Bench Press",
-                  icon: Icons.fitness_center_rounded,
-                  keyboardType: TextInputType.text,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return "Enter an exercise name";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildField(
-                        controller: setsController,
-                        label: "Sets",
-                        hint: "3",
-                        icon: Icons.repeat_rounded,
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final int? n = int.tryParse(v ?? "");
-                          if (n == null || n <= 0 || n > 20) {
-                            return "1-20";
-                          }
-                          return null;
-                        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(22, 14, 22, 26),
+          child: SafeArea(
+            top: false,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: border,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildField(
-                        controller: repsController,
-                        label: "Reps",
-                        hint: "10",
-                        icon: Icons.format_list_numbered_rounded,
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          final int? n = int.tryParse(v ?? "");
-                          if (n == null || n <= 0 || n > 100) {
-                            return "1-100";
-                          }
-                          return null;
-                        },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'Add Exercise',
+                    style: TextStyle(
+                      color: textDark,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    '${widget.workoutDay} Workout',
+                    style: const TextStyle(
+                      color: primaryDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: isCustomExercise
+                        ? 'Custom Exercise'
+                        : selectedExercise,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Exercise',
+                      prefixIcon: const Icon(
+                        Icons.fitness_center_rounded,
+                        color: primaryDark,
                       ),
+                      filled: true,
+                      fillColor: scaffoldBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: primary,
+                          width: 1.6,
+                        ),
+                      ),
+                    ),
+                    items: [
+                      ...widget.availableExercises.map(
+                        (exercise) => DropdownMenuItem<String>(
+                          value: exercise,
+                          child: Text(exercise),
+                        ),
+                      ),
+                      const DropdownMenuItem<String>(
+                        value: 'Custom Exercise',
+                        child: Text(
+                          '+ Custom Exercise',
+                          style: TextStyle(
+                            color: primaryDark,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setState(() {
+                        if (value == 'Custom Exercise') {
+                          isCustomExercise = true;
+                          selectedExercise = null;
+                        } else {
+                          isCustomExercise = false;
+                          selectedExercise = value;
+                          customExerciseController.clear();
+                        }
+                      });
+                    },
+                  ),
+
+                  if (isCustomExercise) ...[
+                    const SizedBox(height: 14),
+
+                    _buildField(
+                      controller: customExerciseController,
+                      label: 'Custom Exercise Name',
+                      hint: 'e.g. Dumbbell Pullover',
+                      icon: Icons.edit_outlined,
+                      keyboardType: TextInputType.text,
+                      validator: (value) {
+                        if (!isCustomExercise) {
+                          return null;
+                        }
+
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter an exercise name';
+                        }
+
+                        return null;
+                      },
                     ),
                   ],
-                ),
-                const SizedBox(height: 14),
 
-                _buildField(
-                  controller: weightController,
-                  label: "Weight (kg) — optional",
-                  hint: "Leave empty for bodyweight",
-                  icon: Icons.monitor_weight_outlined,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildField(
+                          controller: setsController,
+                          label: 'Sets',
+                          hint: '3',
+                          icon: Icons.repeat_rounded,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            final number = int.tryParse(value ?? '');
+
+                            if (number == null || number <= 0 || number > 20) {
+                              return '1-20';
+                            }
+
+                            return null;
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: _buildField(
+                          controller: repsController,
+                          label: 'Reps',
+                          hint: '10',
+                          icon: Icons.format_list_numbered_rounded,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            final number = int.tryParse(value ?? '');
+
+                            if (number == null || number <= 0 || number > 100) {
+                              return '1-100';
+                            }
+
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return null;
-                    final double? n = double.tryParse(v.trim());
-                    if (n == null || n < 0 || n > 500) {
-                      return "Enter a valid weight";
-                    }
-                    return null;
-                  },
-                ),
 
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 14),
+
+                  _buildField(
+                    controller: weightController,
+                    label: 'Working Weight (kg)',
+                    hint: 'Leave empty for bodyweight',
+                    icon: Icons.monitor_weight_outlined,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return null;
+                      }
+
+                      final number = double.tryParse(value.trim());
+
+                      if (number == null || number < 0 || number > 500) {
+                        return 'Enter a valid weight';
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'ADD TO WORKOUT',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      "SAVE EXERCISE",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -621,7 +1205,6 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
         hintStyle: const TextStyle(color: Color(0xFFB6C0BA), fontSize: 12.5),
         filled: true,
         fillColor: scaffoldBg,
-        errorStyle: const TextStyle(color: Color(0xFFEF6C6C), fontSize: 11.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
