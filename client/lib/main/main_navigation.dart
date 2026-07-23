@@ -16,26 +16,50 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  //static const Color primary = Color(0xFF1DB954);
+  int _dashboardRefreshKey = 0;
+  int _healthRefreshKey = 0;
+
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color textMuted = Color(0xFF6B7570);
   static const Color softMint = Color(0xFFE4F5E8);
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    HealthScreen(),
-    WorkoutScreen(),
-    ActivityScreen(),
-    ProfileScreen(),
-  ];
+  void _onDestinationSelected(int index) {
+    setState(() {
+      _currentIndex = index;
+
+      // Refresh Dashboard when Home is selected
+      if (index == 0) {
+        _dashboardRefreshKey++;
+      }
+
+      // Refresh Health when Health is selected
+      if (index == 1) {
+        _healthRefreshKey++;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      DashboardScreen(key: ValueKey('dashboard_$_dashboardRefreshKey')),
+
+      HealthScreen(key: ValueKey('health_$_healthRefreshKey')),
+
+      const WorkoutScreen(),
+
+      const ActivityScreen(),
+
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: IndexedStack(index: _currentIndex, children: _screens),
+
+      body: IndexedStack(index: _currentIndex, children: screens),
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: surface,
@@ -78,11 +102,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
             child: NavigationBar(
               selectedIndex: _currentIndex,
-              onDestinationSelected: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
+
+              onDestinationSelected: _onDestinationSelected,
+
               destinations: const [
                 NavigationDestination(
                   icon: Icon(Icons.home_outlined, color: textMuted),

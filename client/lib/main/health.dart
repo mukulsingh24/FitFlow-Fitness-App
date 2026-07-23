@@ -12,7 +12,6 @@ class HealthScreen extends StatefulWidget {
 }
 
 class _HealthScreenState extends State<HealthScreen> {
-  // static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
   static const Color surface = Color(0xFFFFFFFF);
@@ -25,6 +24,7 @@ class _HealthScreenState extends State<HealthScreen> {
   double? latestWeight;
   double? latestCalories;
   bool isLoadingHealth = true;
+  List<Map<String, dynamic>> recentHealthActivity = [];
 
   @override
   void initState() {
@@ -34,25 +34,70 @@ class _HealthScreenState extends State<HealthScreen> {
 
   Future<void> _loadHealthData() async {
     try {
-      final bmiData = await ApiService.getLatestBMI();
-      final calorieData = await ApiService.getLatestCalories();
+      final results = await Future.wait([
+        ApiService.getBMIHistory(),
+        ApiService.getCalorieHistory(),
+      ]);
+
+      final bmiHistory = results[0];
+      final calorieHistory = results[1];
+
+      final List<Map<String, dynamic>> activities = [];
+
+      for (final record in bmiHistory) {
+        activities.add({
+          'type': 'bmi',
+          'bmi': record['bmi'],
+          'weight': record['weight'],
+          'created_at': record['created_at'],
+        });
+      }
+
+      for (final record in calorieHistory) {
+        activities.add({
+          'type': 'calorie',
+          'calories': record['target_calories'],
+          'goal': record['goal'],
+          'created_at': record['created_at'],
+        });
+      }
+
+      activities.sort((a, b) {
+        final aDate = DateTime.tryParse(a['created_at']?.toString() ?? '');
+
+        final bDate = DateTime.tryParse(b['created_at']?.toString() ?? '');
+
+        if (aDate == null || bDate == null) {
+          return 0;
+        }
+
+        return bDate.compareTo(aDate);
+      });
 
       if (!mounted) return;
 
       setState(() {
-        if (bmiData != null) {
-          latestBmi = (bmiData['bmi'] as num?)?.toDouble();
-          latestWeight = (bmiData['weight'] as num?)?.toDouble();
+        if (bmiHistory.isNotEmpty) {
+          final latestBMI = bmiHistory.first;
+
+          latestBmi = (latestBMI['bmi'] as num?)?.toDouble();
+
+          latestWeight = (latestBMI['weight'] as num?)?.toDouble();
         }
 
-        if (calorieData != null) {
-          latestCalories = (calorieData['target_calories'] as num?)?.toDouble();
+        if (calorieHistory.isNotEmpty) {
+          final latestCalorie = calorieHistory.first;
+
+          latestCalories = (latestCalorie['target_calories'] as num?)
+              ?.toDouble();
         }
+
+        recentHealthActivity = activities.take(5).toList();
 
         isLoadingHealth = false;
       });
     } catch (e) {
-      debugPrint("HEALTH DATA ERROR: $e");
+      debugPrint('HEALTH DATA ERROR: $e');
 
       if (!mounted) return;
 
@@ -154,28 +199,7 @@ class _HealthScreenState extends State<HealthScreen> {
                   await _loadHealthData();
                 },
               ),
-
-              const SizedBox(height: 12),
-
-              HealthFeatureCard(
-                icon: Icons.monitor_weight_outlined,
-                title: "Weight Tracker",
-                description:
-                    "Track your body weight and monitor changes over time.",
-                buttonText: "Coming Soon",
-                disabled: true,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Weight Tracker will be available soon."),
-                      backgroundColor: Color.fromARGB(255, 123, 255, 0),
-                    ),
-                  );
-                },
-              ),
-
               const SizedBox(height: 28),
-
               const Row(
                 children: [
                   Text(
@@ -192,9 +216,7 @@ class _HealthScreenState extends State<HealthScreen> {
               ),
 
               const SizedBox(height: 14),
-
-              _buildEmptyHistory(),
-
+              _buildRecentHealthActivity(),
               const SizedBox(height: 24),
             ],
           ),
@@ -287,48 +309,139 @@ class _HealthScreenState extends State<HealthScreen> {
     );
   }
 
-  Widget _buildEmptyHistory() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: scaffoldBg,
-              shape: BoxShape.circle,
+  Widget _buildRecentHealthActivity() {
+    if (isLoadingHealth) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (recentHealthActivity.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: border),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.insights_outlined, color: textMuted, size: 30),
+            SizedBox(height: 12),
+            Text(
+              "No health history yet",
+              style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
             ),
-            child: const Icon(
-              Icons.insights_outlined,
-              color: textMuted,
-              size: 26,
+            SizedBox(height: 6),
+            Text(
+              "Your BMI and calorie history will appear here.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textMuted, fontSize: 12),
             ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: recentHealthActivity.map((activity) {
+        final bool isBMI = activity['type'] == 'bmi';
+
+        final date = DateTime.tryParse(
+          activity['created_at']?.toString() ?? '',
+        );
+
+        String dateText = '';
+
+        if (date != null) {
+          dateText = '${date.day}/${date.month}/${date.year}';
+        }
+
+        String title;
+        String subtitle;
+
+        if (isBMI) {
+          final bmi = (activity['bmi'] as num?)?.toDouble();
+
+          final weight = (activity['weight'] as num?)?.toDouble();
+
+          title = 'BMI Recorded';
+
+          subtitle =
+              '${bmi?.toStringAsFixed(1) ?? '--'} BMI'
+              ' • '
+              '${weight?.toStringAsFixed(1) ?? '--'} kg';
+        } else {
+          final calories = (activity['calories'] as num?)?.toDouble();
+
+          final goal = activity['goal']?.toString() ?? '';
+
+          title = 'Calorie Target';
+
+          subtitle =
+              '${calories?.round() ?? '--'} kcal'
+              ' • $goal';
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border),
           ),
-          const SizedBox(height: 14),
-          const Text(
-            "No health history yet",
-            style: TextStyle(
-              color: textDark,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: softMint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isBMI
+                      ? Icons.favorite_outline_rounded
+                      : Icons.local_fire_department_outlined,
+                  color: primaryDark,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: textMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
+              Text(
+                dateText,
+                style: const TextStyle(color: textMuted, fontSize: 10),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          const Text(
-            "Your BMI, calorie and weight history will appear here.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: textMuted, fontSize: 12, height: 1.5),
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 }
