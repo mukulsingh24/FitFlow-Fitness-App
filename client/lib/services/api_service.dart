@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -342,6 +343,85 @@ class ApiService {
       );
     } catch (e) {
       throw Exception('Unable to load workout history: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getProfile() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('GET PROFILE STATUS: ${response.statusCode}');
+      debugPrint('GET PROFILE BODY: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      throw Exception(
+        'Failed to load profile (${response.statusCode}): ${response.body}',
+      );
+    } catch (e) {
+      debugPrint('GET PROFILE ERROR: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String name,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'name': name.trim()}),
+      );
+
+      debugPrint('UPDATE PROFILE STATUS: ${response.statusCode}');
+      debugPrint('UPDATE PROFILE BODY: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      throw Exception(
+        'Failed to update profile (${response.statusCode}): ${response.body}',
+      );
+    } catch (e) {
+      debugPrint('UPDATE PROFILE ERROR: $e');
+      rethrow;
     }
   }
 }

@@ -9,39 +9,50 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    firebase_uid = Column(String, unique=True, nullable=False, index=True)
-    email = Column(String, unique=True, nullable=False)
-    name = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    firebase_uid = Column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    email = Column(
+        String,
+        unique=True,
+        nullable=False,
+    )
+
+    name = Column(
+        String,
+        nullable=True,
+    )
+
+    date_of_birth = Column(
+        Date,
+        nullable=True,
+    )
+
+    gender = Column(
+        String,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
 
     health_records = relationship(
         "HealthRecord",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     workouts = relationship(
         "Workout",
         back_populates="user",
-        cascade="all, delete-orphan"
-    )
-
-
-class HealthRecord(Base):
-    __tablename__ = "health_records"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    weight = Column(Float, nullable=True)
-    bmi = Column(Float, nullable=True)
-    calories = Column(Float, nullable=True)
-    height_cm = Column(Float, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship(
-        "User",
-        back_populates="health_records"
+        cascade="all, delete-orphan",
     )
 
 class Exercise(Base):

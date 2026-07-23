@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic import BaseModel, Field
 from typing import List
+from datetime import date
 class BMICreate(BaseModel):
     weight: float = Field(gt=0)
     height_cm: float = Field(gt=0)
@@ -61,3 +62,19 @@ class WorkoutCreate(BaseModel):
     )
 
     exercises: List[WorkoutExerciseCreate]
+
+
+class PersonalInfoUpdate(BaseModel):
+    name: str
+    date_of_birth: date | None = None
+    gender: str | None = None
+
+
+class PersonalInfoResponse(BaseModel):
+    id: int
+    firebase_uid: str
+    name: str | None
+    email: str
+
+    class Config:
+        from_attributes = True

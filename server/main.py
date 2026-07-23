@@ -19,6 +19,7 @@ from schemas import (
     BMICreate,
     CalorieCreate,
     WorkoutCreate,
+    PersonalInfoUpdate,
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -447,3 +448,77 @@ def get_workouts(
         })
 
     return result
+
+@app.get("/profile")
+def get_profile(
+    decoded_token: dict = Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = decoded_token["uid"]
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    return {
+        "id": user.id,
+        "firebase_uid": user.firebase_uid,
+        "name": user.name,
+        "email": user.email,
+        "date_of_birth": user.date_of_birth,
+        "gender": user.gender,
+    }
+@app.put("/profile")
+def update_profile(
+    profile_data: PersonalInfoUpdate,
+    decoded_token: dict = Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = decoded_token["uid"]
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    cleaned_name = profile_data.name.strip()
+
+    if not cleaned_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Name cannot be empty",
+        )
+
+    user.name = cleaned_name
+    user.date_of_birth = profile_data.date_of_birth
+    user.gender = profile_data.gender
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Profile updated successfully",
+        "user": {
+            "id": user.id,
+            "firebase_uid": user.firebase_uid,
+            "name": user.name,
+            "email": user.email,
+            "date_of_birth": user.date_of_birth,
+            "gender": user.gender,
+        },
+    }
