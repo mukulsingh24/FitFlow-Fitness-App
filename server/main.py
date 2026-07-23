@@ -1,12 +1,25 @@
+from datetime import date
+
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
 from auth import verify_firebase_token
-from models import User, HealthRecord, CalorieRecord
-from schemas import BMICreate, CalorieCreate
 
-import models
+from models import (
+    User,
+    HealthRecord,
+    CalorieRecord,
+    Workout,
+    Exercise,
+    WorkoutSet,
+)
+
+from schemas import (
+    BMICreate,
+    CalorieCreate,
+    WorkoutCreate,
+)
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="FitFlow API",
@@ -303,3 +316,76 @@ def get_calorie_history(
         }
         for record in records
     ]
+
+@app.post("/workouts")
+def create_workout(
+    workout_data: WorkoutCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+    if not workout_data.exercises:
+        raise HTTPException(
+            status_code=400,
+            detail="Workout must contain at least one exercise",
+        )
+    try:
+        workout = Workout(
+            user_id=user.id,
+            split=workout_data.split,
+            workout_day=workout_data.workout_day,
+            workout_date=date.today(),
+        )
+        db.add(workout)
+        db.flush()
+        for exercise_data in workout_data.exercises:
+            exercise = Exercise(
+                workout_id=workout.id,
+                name=exercise_data.name,
+            )
+            db.add(exercise)
+            db.flush()
+            for set_number in range(
+                1,
+                exercise_data.sets + 1,
+            ):
+                workout_set = WorkoutSet(
+                    exercise_id=exercise.id,
+                    set_number=set_number,
+                    reps=exercise_data.reps,
+                    weight=exercise_data.working_weight,
+                )
+
+                db.add(workout_set)
+
+        db.commit()
+        db.refresh(workout)
+
+        return {
+            "message": "Workout saved successfully",
+            "workout_id": workout.id,
+            "split": workout.split,
+            "workout_day": workout.workout_day,
+            "workout_date": workout.workout_date,
+            "exercise_count": len(
+                workout_data.exercises
+            ),
+        }
+
+    except Exception as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save workout: {str(e)}",
+        )

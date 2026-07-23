@@ -44,29 +44,6 @@ class HealthRecord(Base):
         back_populates="health_records"
     )
 
-
-class Workout(Base):
-    __tablename__ = "workouts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    workout_date = Column(Date, nullable=False)
-    duration_minutes = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship(
-        "User",
-        back_populates="workouts"
-    )
-
-    exercises = relationship(
-        "Exercise",
-        back_populates="workout",
-        cascade="all, delete-orphan"
-    )
-
-
 class Exercise(Base):
     __tablename__ = "exercises"
 
@@ -90,26 +67,85 @@ class Exercise(Base):
         cascade="all, delete-orphan"
     )
 
-
 class WorkoutSet(Base):
     __tablename__ = "workout_sets"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
     exercise_id = Column(
         Integer,
         ForeignKey("exercises.id"),
         nullable=False
     )
 
-    set_number = Column(Integer, nullable=False)
-    reps = Column(Integer, nullable=False)
-    weight = Column(Float, nullable=True)
+    set_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    reps = Column(
+        Integer,
+        nullable=False
+    )
+
+    weight = Column(
+        Float,
+        nullable=True
+    )
 
     exercise = relationship(
         "Exercise",
         back_populates="sets"
     )
+class Workout(Base):
+    __tablename__ = "workouts"
 
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    split = Column(
+        String,
+        nullable=False
+    )
+
+    workout_day = Column(
+        String,
+        nullable=False
+    )
+
+    workout_date = Column(
+        Date,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    user = relationship(
+        "User",
+        back_populates="workouts"
+    )
+
+    exercises = relationship(
+        "Exercise",
+        back_populates="workout",
+        cascade="all, delete-orphan"
+    )
 class CalorieRecord(Base):
     __tablename__ = "calorie_records"
 
