@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class WorkoutExercise {
   final String id;
@@ -164,19 +165,53 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  void _finishWorkout() {
+  Future<void> _finishWorkout() async {
     if (exercises.isEmpty) {
       return;
     }
 
-    // Temporary local implementation.
-    // Next step: replace this with FastAPI saveWorkout().
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$selectedWorkoutDay workout ready to save'),
-        backgroundColor: primaryDark,
-      ),
-    );
+    try {
+      final workoutExercises = exercises.map((exercise) {
+        return {
+          'name': exercise.name,
+          'sets': exercise.sets,
+          'reps': exercise.reps,
+          'working_weight': exercise.workingWeight,
+        };
+      }).toList();
+
+      final result = await ApiService.saveWorkout(
+        split: selectedSplit,
+        workoutDay: selectedWorkoutDay,
+        exercises: workoutExercises,
+      );
+
+      debugPrint('WORKOUT SAVED: $result');
+
+      if (!mounted) return;
+
+      setState(() {
+        exercises.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Workout saved successfully!'),
+          backgroundColor: primaryDark,
+        ),
+      );
+    } catch (e) {
+      debugPrint('WORKOUT SAVE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save workout: $e'),
+          backgroundColor: danger,
+        ),
+      );
+    }
   }
 
   Widget _buildWorkoutGuidance() {

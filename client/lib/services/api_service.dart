@@ -259,4 +259,48 @@ class ApiService {
 
     return Map<String, dynamic>.from(history.first);
   }
+
+  static Future<Map<String, dynamic>> saveWorkout({
+    required String split,
+    required String workoutDay,
+    required List<Map<String, dynamic>> exercises,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/workouts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'split': split,
+          'workout_day': workoutDay,
+          'exercises': exercises,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      throw Exception(
+        'Failed to save workout '
+        '(${response.statusCode}): ${response.body}',
+      );
+    } catch (e) {
+      throw Exception('Unable to save workout: $e');
+    }
+  }
 }
