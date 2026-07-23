@@ -303,4 +303,45 @@ class ApiService {
       throw Exception('Unable to save workout: $e');
     }
   }
+
+  static Future<List<dynamic>> getWorkoutHistory() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/workouts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is List) {
+          return decoded;
+        }
+
+        throw Exception('Invalid workout history response');
+      }
+
+      throw Exception(
+        'Failed to load workout history '
+        '(${response.statusCode}): ${response.body}',
+      );
+    } catch (e) {
+      throw Exception('Unable to load workout history: $e');
+    }
+  }
 }

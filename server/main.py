@@ -389,3 +389,61 @@ def create_workout(
             status_code=500,
             detail=f"Failed to save workout: {str(e)}",
         )
+
+@app.get("/workouts")
+def get_workouts(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    workouts = (
+        db.query(Workout)
+        .filter(Workout.user_id == user.id)
+        .order_by(Workout.created_at.desc())
+        .all()
+    )
+
+    result = []
+
+    for workout in workouts:
+        exercise_list = []
+
+        for exercise in workout.exercises:
+            sets_list = []
+
+            for workout_set in exercise.sets:
+                sets_list.append({
+                    "set_number": workout_set.set_number,
+                    "reps": workout_set.reps,
+                    "weight": workout_set.weight,
+                })
+
+            exercise_list.append({
+                "id": exercise.id,
+                "name": exercise.name,
+                "sets": sets_list,
+            })
+
+        result.append({
+            "id": workout.id,
+            "split": workout.split,
+            "workout_day": workout.workout_day,
+            "workout_date": workout.workout_date,
+            "created_at": workout.created_at,
+            "exercises": exercise_list,
+        })
+
+    return result

@@ -119,7 +119,6 @@ const Map<String, List<String>> exerciseLibrary = {
     'Ab Wheel Rollout',
   ],
 
-  // REST
   'Rest': [],
 };
 
@@ -145,6 +144,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   String selectedWorkoutDay = 'Push';
 
   final List<WorkoutExercise> exercises = [];
+  List<dynamic> workoutHistory = [];
+  bool isLoadingHistory = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkoutHistory();
+  }
+
+  Future<void> _loadWorkoutHistory() async {
+    try {
+      final history = await ApiService.getWorkoutHistory();
+
+      if (!mounted) return;
+
+      setState(() {
+        workoutHistory = history;
+        isLoadingHistory = false;
+      });
+    } catch (e) {
+      debugPrint('WORKOUT HISTORY ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingHistory = false;
+      });
+    }
+  }
 
   List<String> get availableWorkoutDays {
     return workoutSplits[selectedSplit] ?? [];
@@ -165,53 +192,400 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  Future<void> _finishWorkout() async {
-    if (exercises.isEmpty) {
-      return;
-    }
-
-    try {
-      final workoutExercises = exercises.map((exercise) {
-        return {
-          'name': exercise.name,
-          'sets': exercise.sets,
-          'reps': exercise.reps,
-          'working_weight': exercise.workingWeight,
-        };
-      }).toList();
-
-      final result = await ApiService.saveWorkout(
-        split: selectedSplit,
-        workoutDay: selectedWorkoutDay,
-        exercises: workoutExercises,
-      );
-
-      debugPrint('WORKOUT SAVED: $result');
-
-      if (!mounted) return;
-
-      setState(() {
-        exercises.clear();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Workout saved successfully!'),
-          backgroundColor: primaryDark,
+  Widget _buildWorkoutHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recent Workouts',
+          style: TextStyle(
+            color: textDark,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      );
-    } catch (e) {
-      debugPrint('WORKOUT SAVE ERROR: $e');
 
-      if (!mounted) return;
+        const SizedBox(height: 6),
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save workout: $e'),
-          backgroundColor: danger,
+        const Text(
+          'Review your recently completed workouts.',
+          style: TextStyle(color: textMuted, fontSize: 12.5),
         ),
-      );
-    }
+
+        const SizedBox(height: 16),
+
+        if (isLoadingHistory)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (workoutHistory.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: border),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.history_rounded, color: textMuted, size: 30),
+                SizedBox(height: 10),
+                Text(
+                  'No workouts yet',
+                  style: TextStyle(
+                    color: textDark,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Complete your first workout to see it here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: textMuted, fontSize: 12),
+                ),
+              ],
+            ),
+          )
+        else
+          ...workoutHistory.take(5).map((workout) {
+            final exerciseList = workout['exercises'] as List? ?? [];
+
+            int totalSets = 0;
+
+            for (final exercise in exerciseList) {
+              final sets = exercise['sets'] as List? ?? [];
+
+              totalSets += sets.length;
+            }
+
+            return InkWell(
+              onTap: () {
+                _showWorkoutDetails(workout);
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: softMint,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.fitness_center_rounded,
+                        color: primaryDark,
+                      ),
+                    ),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            workout['workout_day']?.toString() ?? 'Workout',
+                            style: const TextStyle(
+                              color: textDark,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+                            '${exerciseList.length} exercises'
+                            ' • $totalSets sets',
+                            style: const TextStyle(
+                              color: textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+
+                          const SizedBox(height: 3),
+
+                          Text(
+                            workout['workout_date']?.toString() ?? '',
+                            style: const TextStyle(
+                              color: textMuted,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Icon(Icons.chevron_right_rounded, color: textMuted),
+                  ],
+                ),
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  void _showWorkoutDetails(dynamic workout) {
+    final List<dynamic> exerciseList = workout['exercises'] as List? ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: 42,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: border,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: softMint,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.fitness_center_rounded,
+                            color: primaryDark,
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${workout['workout_day'] ?? 'Workout'} Workout',
+                                style: const TextStyle(
+                                  color: textDark,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+
+                              const SizedBox(height: 3),
+
+                              Text(
+                                workout['workout_date']?.toString() ?? '',
+                                style: const TextStyle(
+                                  color: textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  const Divider(color: border, height: 1),
+
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(22),
+                      itemCount: exerciseList.length,
+                      itemBuilder: (context, index) {
+                        final exercise = exerciseList[index];
+
+                        final List<dynamic> sets =
+                            exercise['sets'] as List? ?? [];
+
+                        return _buildWorkoutDetailExercise(
+                          exercise['name']?.toString() ?? 'Exercise',
+                          sets,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildWorkoutDetailExercise(String exerciseName, List<dynamic> sets) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scaffoldBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.fitness_center_rounded,
+                color: primaryDark,
+                size: 19,
+              ),
+
+              const SizedBox(width: 9),
+
+              Expanded(
+                child: Text(
+                  exerciseName,
+                  style: const TextStyle(
+                    color: textDark,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          const Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'SET',
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'WEIGHT',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'REPS',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          ...sets.map((set) {
+            final weight = (set['weight'] as num?)?.toDouble() ?? 0;
+
+            final weightText = weight > 0
+                ? '${weight.toStringAsFixed(weight % 1 == 0 ? 0 : 1)} kg'
+                : 'Bodyweight';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${set['set_number'] ?? '-'}',
+                      style: const TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: Text(
+                      weightText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: Text(
+                      '${set['reps'] ?? '-'}',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 
   Widget _buildWorkoutGuidance() {
@@ -365,6 +739,55 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     setState(() {
       exercises.add(exercise);
     });
+  }
+
+  Future<void> _finishWorkout() async {
+    if (exercises.isEmpty) {
+      return;
+    }
+
+    try {
+      final workoutExercises = exercises.map((exercise) {
+        return {
+          'name': exercise.name,
+          'sets': exercise.sets,
+          'reps': exercise.reps,
+          'working_weight': exercise.workingWeight,
+        };
+      }).toList();
+
+      final result = await ApiService.saveWorkout(
+        split: selectedSplit,
+        workoutDay: selectedWorkoutDay,
+        exercises: workoutExercises,
+      );
+      await _loadWorkoutHistory();
+      debugPrint('WORKOUT SAVED: $result');
+
+      if (!mounted) return;
+
+      setState(() {
+        exercises.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Workout saved successfully!'),
+          backgroundColor: primaryDark,
+        ),
+      );
+    } catch (e) {
+      debugPrint('WORKOUT SAVE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save workout: $e'),
+          backgroundColor: danger,
+        ),
+      );
+    }
   }
 
   void _deleteExercise(String id) {
@@ -631,10 +1054,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ),
 
               const SizedBox(height: 30),
-
-              _buildWorkoutGuidance(),
-
+              _buildWorkoutHistory(),
               const SizedBox(height: 30),
+              _buildWorkoutGuidance(),
             ],
           ),
         ),
