@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import '../auth/login.dart';
-import 'personal_information.dart';
+import '../services/api_service.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class PersonalInformationScreen extends StatefulWidget {
+  const PersonalInformationScreen({super.key});
 
+  @override
+  State<PersonalInformationScreen> createState() =>
+      _PersonalInformationScreenState();
+}
+
+class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
@@ -17,313 +21,449 @@ class ProfileScreen extends StatelessWidget {
   static const Color border = Color(0xFFE7ECE8);
   static const Color danger = Color(0xFFEF6C6C);
 
-  Future<void> logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
+  final _formKey = GlobalKey<FormState>();
 
-    if (!context.mounted) return;
+  final TextEditingController _nameController = TextEditingController();
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+  final TextEditingController _emailController = TextEditingController();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _selectedGender;
+  DateTime? _selectedDateOfBirth;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await ApiService.getProfile();
+
+      if (!mounted) return;
+
+      setState(() {
+        _nameController.text = profile['name']?.toString() ?? '';
+        _emailController.text = profile['email']?.toString() ?? '';
+        _selectedGender = profile['gender']?.toString();
+        if (profile['date_of_birth'] != null) {
+          _selectedDateOfBirth = DateTime.parse(profile['date_of_birth']);
+        }
+
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load profile: $e'),
+          backgroundColor: danger,
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await ApiService.updateProfile(
+        name: _nameController.text.trim(),
+        gender: _selectedGender,
+        dateOfBirth: _selectedDateOfBirth,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully'),
+          backgroundColor: primaryDark,
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update profile: $e'),
+          backgroundColor: danger,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    final String name = user?.displayName ?? "FitFlow User";
-    final String email = user?.email ?? "No email available";
-
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: scaffoldBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Profile",
-              style: TextStyle(
-                color: textDark,
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              "Manage your account and preferences",
-              style: TextStyle(color: textMuted, fontSize: 12),
-            ),
-          ],
+        foregroundColor: textDark,
+        title: const Text(
+          'Personal Information',
+          style: TextStyle(
+            color: textDark,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-              decoration: BoxDecoration(
-                color: softMint,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: surface,
-                      shape: BoxShape.circle,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: primary))
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: softMint,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            color: primaryDark,
+                            size: 28,
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Your Information',
+                                  style: TextStyle(
+                                    color: textDark,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Keep your personal information up to date.',
+                                  style: TextStyle(
+                                    color: textMuted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: CircleAvatar(
-                      radius: 48,
-                      backgroundColor: primary,
-                      backgroundImage: user?.photoURL != null
-                          ? NetworkImage(user!.photoURL!)
-                          : null,
-                      child: user?.photoURL == null
-                          ? const Icon(
-                              Icons.person_rounded,
-                              size: 50,
-                              color: Colors.white,
-                            )
-                          : null,
+
+                    const SizedBox(height: 28),
+
+                    const Text(
+                      'Personal Details',
+                      style: TextStyle(
+                        color: textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 6),
 
-                  Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: textDark,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                    const Text(
+                      'Update the name associated with your FitFlow account.',
+                      style: TextStyle(color: textMuted, fontSize: 12.5),
                     ),
-                  ),
 
-                  const SizedBox(height: 5),
+                    const SizedBox(height: 20),
 
-                  Text(
-                    email,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: textMuted, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Full Name',
+                      hint: 'Enter your full name',
+                      icon: Icons.person_outline_rounded,
+                      enabled: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your name';
+                        }
 
-            const SizedBox(height: 28),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Account",
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
+                        if (value.trim().length < 2) {
+                          return 'Name is too short';
+                        }
 
-            const SizedBox(height: 5),
+                        return null;
+                      },
+                    ),
 
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Manage your personal and fitness information.",
-                style: TextStyle(color: textMuted, fontSize: 12.5),
-              ),
-            ),
+                    const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: 'Email Address',
+                      hint: 'Email',
+                      icon: Icons.email_outlined,
+                      enabled: false,
+                    ),
 
-            _ProfileOption(
-              icon: Icons.person_outline_rounded,
-              title: "Personal Information",
-              subtitle: "Manage your personal details",
-              onTap: () async {
-                final updated = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PersonalInformationScreen(),
-                  ),
-                );
+                    const SizedBox(height: 10),
 
-                if (updated == true) {}
-              },
-            ),
-
-            _ProfileOption(
-              icon: Icons.fitness_center_rounded,
-              title: "Fitness Profile",
-              subtitle: "Height, weight and fitness goals",
-              onTap: () {},
-            ),
-
-            const SizedBox(height: 18),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Preferences & Security",
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            _ProfileOption(
-              icon: Icons.notifications_outlined,
-              title: "Notification Settings",
-              subtitle: "Manage your fitness reminders",
-              onTap: () {},
-            ),
-
-            _ProfileOption(
-              icon: Icons.lock_outline_rounded,
-              title: "Privacy & Security",
-              subtitle: "Manage your account security",
-              onTap: () {},
-            ),
-
-            _ProfileOption(
-              icon: Icons.info_outline_rounded,
-              title: "About FitFlow",
-              subtitle: "App information and version",
-              onTap: () {},
-            ),
-
-            const SizedBox(height: 24),
-
-            // Logout Button
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: OutlinedButton.icon(
-                onPressed: () => logout(context),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: danger,
-                  backgroundColor: surface,
-                  side: const BorderSide(color: danger, width: 1.2),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                icon: const Icon(Icons.logout_rounded, size: 20),
-                label: const Text(
-                  "LOGOUT",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.7,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ProfileOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  static const Color primaryDark = Color(0xFF128C3F);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textDark = Color(0xFF16201C);
-  static const Color textMuted = Color(0xFF6B7570);
-  static const Color softMint = Color(0xFFE4F5E8);
-  static const Color border = Color(0xFFE7ECE8);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: softMint,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: primaryDark, size: 22),
-                ),
-
-                const SizedBox(width: 14),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: textDark,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14.5,
+                    const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: textMuted,
+                          size: 14,
+                        ),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Your email is linked to your authentication account and cannot be changed here.',
+                            style: TextStyle(
+                              color: textMuted,
+                              fontSize: 11,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      dropdownColor: surface,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: textMuted,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Gender',
+                        prefixIcon: const Icon(
+                          Icons.wc_rounded,
+                          color: primaryDark,
+                        ),
+                        filled: true,
+                        fillColor: surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: primary,
+                            width: 1.6,
+                          ),
                         ),
                       ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "Male",
+                          child: Text(
+                            "Male",
+                            style: TextStyle(color: textDark),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: "Female",
+                          child: Text(
+                            "Female",
+                            style: TextStyle(color: textDark),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: "Other",
+                          child: Text(
+                            "Other",
+                            style: TextStyle(color: textDark),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGender = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                      const SizedBox(height: 4),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate:
+                              _selectedDateOfBirth ?? DateTime(2005, 1, 1),
+                          firstDate: DateTime(1950),
+                          lastDate: DateTime.now(),
+                        );
 
-                      Text(
-                        subtitle,
-                        style: const TextStyle(color: textMuted, fontSize: 12),
+                        if (picked != null) {
+                          setState(() {
+                            _selectedDateOfBirth = picked;
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Date of Birth',
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_rounded,
+                            color: primaryDark,
+                          ),
+                          filled: true,
+                          fillColor: surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: primary,
+                              width: 1.6,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          _selectedDateOfBirth == null
+                              ? 'Select Date of Birth'
+                              : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
+                          style: TextStyle(
+                            color: _selectedDateOfBirth == null
+                                ? textMuted
+                                : textDark,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: border,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'SAVE CHANGES',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.7,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-
-                const SizedBox(width: 8),
-
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: textMuted,
-                  size: 21,
-                ),
-              ],
+              ),
             ),
-          ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required bool enabled,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      validator: validator,
+      style: const TextStyle(color: textDark, fontWeight: FontWeight.w600),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: enabled ? primaryDark : textMuted),
+        filled: true,
+        fillColor: enabled ? surface : border,
+        labelStyle: const TextStyle(color: textMuted),
+        hintStyle: const TextStyle(color: textMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: primary, width: 1.6),
         ),
       ),
     );

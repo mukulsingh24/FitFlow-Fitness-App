@@ -4,6 +4,7 @@ import './auth/login.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryDark = Color(0xFF128C3F);
   static const Color scaffoldBg = Color(0xFFF6F8F6);
@@ -27,6 +28,8 @@ class HomeScreen extends StatelessWidget {
               _buildHero(context),
               const SizedBox(height: 28),
               _buildFeatures(),
+              const SizedBox(height: 28),
+              _buildSplitPreview(),
               const SizedBox(height: 28),
               _buildFinalCTA(context),
               const SizedBox(height: 24),
@@ -150,7 +153,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  "Log workouts, calories, BMI and body weight in one place, and watch your weekly progress build up.",
+                  "Create your account to calculate your BMI and calorie needs, log every workout, and see your progress build up week over week.",
                   style: TextStyle(color: textMuted, fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 24),
@@ -234,7 +237,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            "All your health metrics, tracked in one app.",
+            "All your health and training tools, in one app.",
             style: TextStyle(color: textMuted, fontSize: 13),
           ),
           const SizedBox(height: 16),
@@ -248,23 +251,23 @@ class HomeScreen extends StatelessWidget {
             children: [
               _featureCard(
                 Icons.monitor_weight_outlined,
-                "BMI",
-                "Understand your body metrics.",
+                "BMI Calculator",
+                "Calculate and track your Body Mass Index over time.",
               ),
               _featureCard(
                 Icons.local_fire_department_outlined,
-                "Calories",
-                "Estimate your daily calorie needs.",
+                "Calorie Calculator",
+                "Get a personalized daily calorie target based on your goal.",
               ),
               _featureCard(
                 Icons.fitness_center,
                 "Workout Log",
-                "Track exercises, sets, reps and weights.",
+                "Log exercises, sets, reps and working weight for every session.",
               ),
               _featureCard(
-                Icons.trending_up_rounded,
-                "Progress",
-                "See your weekly fitness improvements.",
+                Icons.dashboard_outlined,
+                "Dashboard",
+                "See your weekly training and health summary at a glance.",
               ),
             ],
           ),
@@ -313,6 +316,100 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSplitPreview() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: softMint,
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: const Icon(
+                    Icons.account_tree_outlined,
+                    color: primaryDark,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    "Train Your Way",
+                    style: TextStyle(
+                      color: textDark,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Follow a Push Pull Legs split or a Body Part split, then pick your exercises and log your working weight, sets and reps.",
+              style: TextStyle(color: textMuted, fontSize: 13, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "PUSH PULL LEGS",
+              style: TextStyle(
+                color: primaryDark,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: const [
+                _SplitChip(label: "Push"),
+                _SplitChip(label: "Pull"),
+                _SplitChip(label: "Legs"),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "BODY PART SPLIT",
+              style: TextStyle(
+                color: primaryDark,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: const [
+                _SplitChip(label: "Chest"),
+                _SplitChip(label: "Back"),
+                _SplitChip(label: "Arms"),
+                _SplitChip(label: "Abs"),
+                _SplitChip(label: "Rest"),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -387,6 +484,36 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitChip extends StatelessWidget {
+  final String label;
+
+  const _SplitChip({required this.label});
+
+  static const Color primaryDark = Color(0xFF128C3F);
+  static const Color scaffoldBg = Color(0xFFF6F8F6);
+  static const Color border = Color(0xFFE7ECE8);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: scaffoldBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: primaryDark,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

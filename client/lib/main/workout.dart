@@ -103,10 +103,12 @@ const Map<String, List<String>> exerciseLibrary = {
     'Barbell Curl',
     'Dumbbell Curl',
     'Hammer Curl',
-    'Preacher Curl',
-    'Rope Pushdown',
+    'Preacher Biceps Curl',
+    'Rope/Bar Pushdown',
     'Skull Crushers',
+    'Preacher Hammer Curl',
     'Overhead Tricep Extension',
+    'Reverse Grip Curl',
   ],
 
   'Abs': [
@@ -117,6 +119,17 @@ const Map<String, List<String>> exerciseLibrary = {
     'Plank',
     'Russian Twist',
     'Ab Wheel Rollout',
+  ],
+  'Shoulder': [
+    'Shoulder Press',
+    'Overhead Press',
+    'Dumbbell Shoulder Press',
+    'Arnold Press',
+    'Lateral Raises',
+    'Front Raises',
+    'Cable Lateral Raise',
+    'Machine Shoulder Press',
+    'Shrugs',
   ],
 
   'Rest': [],
@@ -828,6 +841,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
           DropdownButtonFormField<String>(
             initialValue: selectedSplit,
+            dropdownColor: surface,
+            style: const TextStyle(
+              color: textDark,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w600,
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: textMuted,
+            ),
             decoration: InputDecoration(
               labelText: 'Workout Split',
               prefixIcon: const Icon(
@@ -844,12 +867,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: border),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: primary, width: 1.6),
+              ),
             ),
             items: workoutSplits.keys
                 .map(
                   (split) => DropdownMenuItem<String>(
                     value: split,
-                    child: Text(split),
+                    child: Text(split, style: const TextStyle(color: textDark)),
                   ),
                 )
                 .toList(),
@@ -861,6 +888,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           DropdownButtonFormField<String>(
             key: ValueKey(selectedSplit),
             initialValue: selectedWorkoutDay,
+            dropdownColor: surface,
+            style: const TextStyle(
+              color: textDark,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w600,
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: textMuted,
+            ),
             decoration: InputDecoration(
               labelText: 'Today\'s Training',
               prefixIcon: const Icon(
@@ -877,11 +914,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: border),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: primary, width: 1.6),
+              ),
             ),
             items: availableWorkoutDays
                 .map(
-                  (day) =>
-                      DropdownMenuItem<String>(value: day, child: Text(day)),
+                  (day) => DropdownMenuItem<String>(
+                    value: day,
+                    child: Text(day, style: const TextStyle(color: textDark)),
+                  ),
                 )
                 .toList(),
             onChanged: _changeWorkoutDay,
