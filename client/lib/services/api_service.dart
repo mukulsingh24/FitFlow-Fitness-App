@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000';
@@ -386,6 +387,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> updateProfile({
     required String name,
+    required String? gender,
+    DateTime? dateOfBirth,
   }) async {
     final User? user = FirebaseAuth.instance.currentUser;
 
@@ -406,18 +409,25 @@ class ApiService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'name': name.trim()}),
+        body: jsonEncode({
+          'name': name.trim(),
+          'gender': gender,
+          'date_of_birth': dateOfBirth == null
+              ? null
+              : DateFormat('yyyy-MM-dd').format(dateOfBirth),
+        }),
       );
 
       debugPrint('UPDATE PROFILE STATUS: ${response.statusCode}');
       debugPrint('UPDATE PROFILE BODY: ${response.body}');
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        return jsonDecode(response.body);
       }
 
       throw Exception(
-        'Failed to update profile (${response.statusCode}): ${response.body}',
+        'Failed to update profile '
+        '(${response.statusCode}): ${response.body}',
       );
     } catch (e) {
       debugPrint('UPDATE PROFILE ERROR: $e');

@@ -29,6 +29,8 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  String? _selectedGender;
+  DateTime? _selectedDateOfBirth;
 
   @override
   void initState() {
@@ -44,8 +46,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
 
       setState(() {
         _nameController.text = profile['name']?.toString() ?? '';
-
         _emailController.text = profile['email']?.toString() ?? '';
+        _selectedGender = profile['gender']?.toString();
+        if (profile['date_of_birth'] != null) {
+          _selectedDateOfBirth = DateTime.parse(profile['date_of_birth']);
+        }
 
         _isLoading = false;
       });
@@ -77,7 +82,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     });
 
     try {
-      await ApiService.updateProfile(name: _nameController.text.trim());
+      await ApiService.updateProfile(
+        name: _nameController.text.trim(),
+        gender: _selectedGender,
+        dateOfBirth: _selectedDateOfBirth,
+      );
 
       if (!mounted) return;
 
@@ -259,9 +268,106 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Gender',
+                        prefixIcon: const Icon(
+                          Icons.wc_rounded,
+                          color: primaryDark,
+                        ),
+                        filled: true,
+                        fillColor: surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: primary,
+                            width: 1.6,
+                          ),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "Male", child: Text("Male")),
+                        DropdownMenuItem(
+                          value: "Female",
+                          child: Text("Female"),
+                        ),
+                        DropdownMenuItem(value: "Other", child: Text("Other")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGender = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
+                    InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate:
+                              _selectedDateOfBirth ?? DateTime(2005, 1, 1),
+                          firstDate: DateTime(1950),
+                          lastDate: DateTime.now(),
+                        );
+
+                        if (picked != null) {
+                          setState(() {
+                            _selectedDateOfBirth = picked;
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Date of Birth',
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_rounded,
+                            color: primaryDark,
+                          ),
+                          filled: true,
+                          fillColor: surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: primary,
+                              width: 1.6,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          _selectedDateOfBirth == null
+                              ? 'Select Date of Birth'
+                              : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
+                          style: TextStyle(
+                            color: _selectedDateOfBirth == null
+                                ? textMuted
+                                : textDark,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 30),
-
                     SizedBox(
                       width: double.infinity,
                       height: 55,
