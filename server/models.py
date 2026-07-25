@@ -187,3 +187,30 @@ class CalorieRecord(Base):
     )
 
     user = relationship("User")
+
+class HealthRecord(Base):
+    __tablename__ = "health_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    weight = Column(Float, nullable=False)
+
+    height_cm = Column(Float, nullable=False)
+
+    bmi = Column(Float, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    user = relationship(
+        "User",
+        back_populates="health_records",
+    )
