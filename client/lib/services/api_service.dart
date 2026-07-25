@@ -434,4 +434,63 @@ class ApiService {
       rethrow;
     }
   }
+
+  static Future<void> addWeight({required double weight, String? notes}) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/weight'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'weight': weight, 'notes': notes}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to save weight (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getWeightHistory() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not logged in');
+    }
+
+    final String? token = await user.getIdToken();
+
+    if (token == null) {
+      throw Exception('Unable to get Firebase ID token');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/weight/history'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    }
+
+    throw Exception(
+      'Failed to load weight history (${response.statusCode}): ${response.body}',
+    );
+  }
 }

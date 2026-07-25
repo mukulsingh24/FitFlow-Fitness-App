@@ -78,3 +78,8 @@ class PersonalInfoResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class WeightCreate(BaseModel):
+    weight: float = Field(gt=0)
+
+    notes: str | None = None

@@ -13,6 +13,7 @@ from models import (
     Workout,
     Exercise,
     WorkoutSet,
+    WeightLog,
 )
 
 from schemas import (
@@ -20,6 +21,7 @@ from schemas import (
     CalorieCreate,
     WorkoutCreate,
     PersonalInfoUpdate,
+    WeightCreate,
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -522,3 +524,80 @@ def update_profile(
             "gender": user.gender,
         },
     }
+
+@app.post("/weight")
+def save_weight(
+    weight_data: WeightCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    weight_log = WeightLog(
+        user_id=user.id,
+        weight=weight_data.weight,
+        notes=weight_data.notes,
+        logged_at=date.today(),
+    )
+
+    db.add(weight_log)
+    db.commit()
+    db.refresh(weight_log)
+
+    return {
+        "message": "Weight saved successfully",
+        "id": weight_log.id,
+        "weight": weight_log.weight,
+        "notes": weight_log.notes,
+        "logged_at": weight_log.logged_at,
+        "created_at": weight_log.created_at,
+    }
+
+@app.get("/weight/history")
+def get_weight_history(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    records = (
+        db.query(WeightLog)
+        .filter(WeightLog.user_id == user.id)
+        .order_by(WeightLog.logged_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": record.id,
+            "weight": record.weight,
+            "notes": record.notes,
+            "logged_at": record.logged_at,
+            "created_at": record.created_at,
+        }
+        for record in records
+    ]

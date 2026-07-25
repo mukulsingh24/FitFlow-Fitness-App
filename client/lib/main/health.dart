@@ -199,6 +199,25 @@ class _HealthScreenState extends State<HealthScreen> {
                   await _loadHealthData();
                 },
               ),
+              HealthFeatureCard(
+                icon: Icons.local_fire_department_outlined,
+                title: "Weight Tracker",
+                description:
+                    "Track your weight progress and monitor changes over time.",
+                buttonText: "Weight Tracker",
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CalorieCalculatorScreen(),
+                    ),
+                  );
+
+                  if (!mounted) return;
+
+                  await _loadHealthData();
+                },
+              ),
               const SizedBox(height: 28),
               const Row(
                 children: [

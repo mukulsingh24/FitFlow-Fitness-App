@@ -54,6 +54,10 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    weight_logs = relationship(
+    "WeightLog",
+    cascade="all, delete-orphan",
+)
 
 class Exercise(Base):
     __tablename__ = "exercises"
@@ -214,3 +218,40 @@ class HealthRecord(Base):
         "User",
         back_populates="health_records",
     )
+
+class WeightLog(Base):
+    __tablename__ = "weight_logs"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    weight = Column(
+        Float,
+        nullable=False,
+    )
+
+    notes = Column(
+        String,
+        nullable=True,
+    )
+
+    logged_at = Column(
+        Date,
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    user = relationship("User")
