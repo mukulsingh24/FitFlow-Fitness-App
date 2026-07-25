@@ -83,3 +83,7 @@ class WeightCreate(BaseModel):
     weight: float = Field(gt=0)
 
     notes: str | None = None
+
+class WeightUpdate(BaseModel):
+    weight: float = Field(gt=0)
+    notes: str | None = None

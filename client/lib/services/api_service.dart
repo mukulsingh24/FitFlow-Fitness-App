@@ -493,4 +493,63 @@ class ApiService {
       'Failed to load weight history (${response.statusCode}): ${response.body}',
     );
   }
+
+  static Future<void> updateWeight({
+    required int id,
+    required double weight,
+    String? notes,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/weight/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"weight": weight, "notes": notes}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<void> deleteWeight(int id) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/weight/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getLatestWeight() async {
+    final history = await getWeightHistory();
+
+    if (history.isEmpty) {
+      return null;
+    }
+
+    return history.first;
+  }
 }

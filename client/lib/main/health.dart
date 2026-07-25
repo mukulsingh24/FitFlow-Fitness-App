@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'bmi.dart';
 import 'calorie.dart';
+import 'weight.dart';
 import '../services/api_service.dart';
 
 class HealthScreen extends StatefulWidget {
@@ -37,10 +38,12 @@ class _HealthScreenState extends State<HealthScreen> {
       final results = await Future.wait([
         ApiService.getBMIHistory(),
         ApiService.getCalorieHistory(),
+        ApiService.getWeightHistory(),
       ]);
 
       final bmiHistory = results[0];
       final calorieHistory = results[1];
+      final weightHistory = results[2];
 
       final List<Map<String, dynamic>> activities = [];
 
@@ -57,6 +60,14 @@ class _HealthScreenState extends State<HealthScreen> {
         activities.add({
           'type': 'calorie',
           'calories': record['target_calories'],
+          'goal': record['goal'],
+          'created_at': record['created_at'],
+        });
+      }
+      for (final record in weightHistory) {
+        activities.add({
+          'type': 'weight',
+          'weight': record['weight'],
           'goal': record['goal'],
           'created_at': record['created_at'],
         });
@@ -79,17 +90,18 @@ class _HealthScreenState extends State<HealthScreen> {
       setState(() {
         if (bmiHistory.isNotEmpty) {
           final latestBMI = bmiHistory.first;
-
           latestBmi = (latestBMI['bmi'] as num?)?.toDouble();
-
-          latestWeight = (latestBMI['weight'] as num?)?.toDouble();
         }
-
         if (calorieHistory.isNotEmpty) {
           final latestCalorie = calorieHistory.first;
 
           latestCalories = (latestCalorie['target_calories'] as num?)
               ?.toDouble();
+        }
+        if (weightHistory.isNotEmpty) {
+          final latestWeightRecord = weightHistory.first;
+
+          latestWeight = (latestWeightRecord['weight'] as num?)?.toDouble();
         }
 
         recentHealthActivity = activities.take(5).toList();
@@ -199,8 +211,9 @@ class _HealthScreenState extends State<HealthScreen> {
                   await _loadHealthData();
                 },
               ),
+              const SizedBox(height: 12),
               HealthFeatureCard(
-                icon: Icons.local_fire_department_outlined,
+                icon: Icons.monitor_weight_outlined,
                 title: "Weight Tracker",
                 description:
                     "Track your weight progress and monitor changes over time.",
@@ -208,9 +221,7 @@ class _HealthScreenState extends State<HealthScreen> {
                 onTap: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CalorieCalculatorScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const WeightScreen()),
                   );
 
                   if (!mounted) return;
@@ -369,7 +380,7 @@ class _HealthScreenState extends State<HealthScreen> {
     return Column(
       children: recentHealthActivity.map((activity) {
         final bool isBMI = activity['type'] == 'bmi';
-
+        final bool isWeight = activity['type'] == 'weight';
         final date = DateTime.tryParse(
           activity['created_at']?.toString() ?? '',
         );
@@ -394,6 +405,12 @@ class _HealthScreenState extends State<HealthScreen> {
               '${bmi?.toStringAsFixed(1) ?? '--'} BMI'
               ' • '
               '${weight?.toStringAsFixed(1) ?? '--'} kg';
+        } else if (isWeight) {
+          final weight = (activity['weight'] as num?)?.toDouble();
+
+          title = 'Weight Updated';
+
+          subtitle = '${weight?.toStringAsFixed(1) ?? '--'} kg';
         } else {
           final calories = (activity['calories'] as num?)?.toDouble();
 

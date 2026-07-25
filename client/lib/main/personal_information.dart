@@ -271,6 +271,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       value: _selectedGender,
+                      dropdownColor: surface,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: textMuted,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Gender',
                         prefixIcon: const Icon(
@@ -296,12 +306,27 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                         ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: "Male", child: Text("Male")),
+                        DropdownMenuItem(
+                          value: "Male",
+                          child: Text(
+                            "Male",
+                            style: TextStyle(color: textDark),
+                          ),
+                        ),
                         DropdownMenuItem(
                           value: "Female",
-                          child: Text("Female"),
+                          child: Text(
+                            "Female",
+                            style: TextStyle(color: textDark),
+                          ),
                         ),
-                        DropdownMenuItem(value: "Other", child: Text("Other")),
+                        DropdownMenuItem(
+                          value: "Other",
+                          child: Text(
+                            "Other",
+                            style: TextStyle(color: textDark),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() {

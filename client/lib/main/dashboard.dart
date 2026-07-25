@@ -21,10 +21,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static const Color softMint = Color(0xFFE4F5E8);
   static const Color border = Color(0xFFE7ECE8);
 
+  List<Map<String, dynamic>> recentActivity = [];
   double? latestBmi;
+  double? latestCalories;
   double? latestWeight;
   bool isLoadingHealth = true;
-  double? latestCalories;
 
   @override
   void initState() {
@@ -34,20 +35,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadLatestHealthData() async {
     try {
-      final bmiData = await ApiService.getLatestBMI();
-      final calorieData = await ApiService.getLatestCalories();
+      final results = await Future.wait([
+        ApiService.getBMIHistory(),
+        ApiService.getCalorieHistory(),
+        ApiService.getWeightHistory(),
+        ApiService.getWorkoutHistory(),
+      ]);
 
+      final bmiHistory = results[0];
+      final calorieHistory = results[1];
+      final weightHistory = results[2];
+      final workoutHistory = results[3];
+      final List<Map<String, dynamic>> activities = [];
+      for (final record in bmiHistory) {
+        activities.add({
+          "type": "bmi",
+          "created_at": record["created_at"],
+          "bmi": record["bmi"],
+          "weight": record["weight"],
+        });
+      }
+      for (final record in calorieHistory) {
+        activities.add({
+          "type": "calorie",
+          "created_at": record["created_at"],
+          "calories": record["target_calories"],
+          "goal": record["goal"],
+        });
+      }
+      for (final record in weightHistory) {
+        activities.add({
+          "type": "weight",
+          "created_at": record["created_at"],
+          "weight": record["weight"],
+        });
+      }
+      for (final workout in workoutHistory) {
+        activities.add({
+          "type": "workout",
+          "created_at": workout["created_at"],
+          "workout_day": workout["workout_day"],
+          "exercise_count": (workout["exercises"] as List).length,
+        });
+      }
+      activities.sort((a, b) {
+        final aDate = DateTime.parse(a["created_at"]);
+        final bDate = DateTime.parse(b["created_at"]);
+
+        return bDate.compareTo(aDate);
+      });
       if (!mounted) return;
 
       setState(() {
-        if (bmiData != null) {
-          latestBmi = (bmiData['bmi'] as num?)?.toDouble();
-          latestWeight = (bmiData['weight'] as num?)?.toDouble();
+        if (bmiHistory.isNotEmpty) {
+          latestBmi = (bmiHistory.first["bmi"] as num?)?.toDouble();
         }
 
-        if (calorieData != null) {
-          latestCalories = (calorieData['target_calories'] as num?)?.toDouble();
+        if (calorieHistory.isNotEmpty) {
+          latestCalories = (calorieHistory.first["target_calories"] as num?)
+              ?.toDouble();
         }
+
+        if (weightHistory.isNotEmpty) {
+          latestWeight = (weightHistory.first["weight"] as num?)?.toDouble();
+        }
+
+        recentActivity = activities.take(10).toList();
 
         isLoadingHealth = false;
       });
@@ -129,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Welcome back, $userName 👋",
+                "Welcome back, $userName",
                 style: const TextStyle(
                   color: textDark,
                   fontSize: 23,
@@ -240,24 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 26),
-
-              const Text(
-                "This Week",
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              _buildWeeklyProgress(),
-
-              const SizedBox(height: 26),
-
               const Row(
                 children: [
                   Text(
@@ -368,124 +404,164 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildWeeklyProgress() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Text(
-                "Weekly Workout Goal",
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Spacer(),
-              Text(
-                "0 / 5",
-                style: TextStyle(
-                  color: primaryDark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 15),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(
-              value: 0,
-              minHeight: 9,
-              backgroundColor: scaffoldBg,
-              valueColor: AlwaysStoppedAnimation<Color>(primary),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _WeekDay(day: "M"),
-              _WeekDay(day: "T"),
-              _WeekDay(day: "W"),
-              _WeekDay(day: "T"),
-              _WeekDay(day: "F"),
-              _WeekDay(day: "S"),
-              _WeekDay(day: "S"),
-            ],
-          ),
-
-          const SizedBox(height: 15),
-
-          const Text(
-            "Complete workouts to track your weekly consistency.",
-            style: TextStyle(color: textMuted, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildRecentActivity() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: scaffoldBg,
-              shape: BoxShape.circle,
+    if (isLoadingHealth) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (recentActivity.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: border),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.history_rounded, color: textMuted, size: 30),
+            SizedBox(height: 12),
+            Text(
+              "No recent activity",
+              style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
             ),
-            child: const Icon(
-              Icons.history_toggle_off_rounded,
-              color: textMuted,
-              size: 28,
+            SizedBox(height: 6),
+            Text(
+              "Your recent workouts and health updates will appear here.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textMuted, fontSize: 12),
             ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: recentActivity.map((activity) {
+        final type = activity["type"];
+
+        final date = DateTime.tryParse(
+          activity["created_at"]?.toString() ?? "",
+        );
+
+        String dateText = "";
+
+        if (date != null) {
+          dateText = "${date.day}/${date.month}/${date.year}";
+        }
+
+        IconData icon;
+        String title;
+        String subtitle;
+
+        switch (type) {
+          case "bmi":
+            icon = Icons.favorite_outline_rounded;
+
+            title = "BMI Recorded";
+
+            subtitle =
+                "${(activity["bmi"] as num).toStringAsFixed(1)} BMI"
+                " • "
+                "${(activity["weight"] as num).toStringAsFixed(1)} kg";
+
+            break;
+
+          case "calorie":
+            icon = Icons.local_fire_department_outlined;
+
+            title = "Calorie Target";
+
+            subtitle =
+                "${(activity["calories"] as num).round()} kcal"
+                " • ${activity["goal"]}";
+
+            break;
+
+          case "weight":
+            icon = Icons.monitor_weight_outlined;
+
+            title = "Weight Logged";
+
+            subtitle = "${(activity["weight"] as num).toStringAsFixed(1)} kg";
+
+            break;
+
+          case "workout":
+            icon = Icons.fitness_center;
+
+            title = activity["workout_day"];
+
+            subtitle = "${activity["exercise_count"]} exercises completed";
+
+            break;
+
+          default:
+            icon = Icons.history;
+
+            title = "Activity";
+
+            subtitle = "";
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border),
           ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: softMint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: primaryDark),
+              ),
 
-          const SizedBox(height: 14),
+              const SizedBox(width: 12),
 
-          const Text(
-            "No recent activity",
-            style: TextStyle(
-              color: textDark,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: textMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
+              Text(
+                dateText,
+                style: const TextStyle(color: textMuted, fontSize: 10),
+              ),
+            ],
           ),
-
-          const SizedBox(height: 6),
-
-          const Text(
-            "Your latest workouts, health updates and fitness activity will appear here.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: textMuted, fontSize: 12, height: 1.5),
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 }
@@ -612,37 +688,6 @@ class _OverviewCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _WeekDay extends StatelessWidget {
-  final String day;
-
-  const _WeekDay({required this.day});
-
-  static const Color scaffoldBg = Color(0xFFF6F8F6);
-  static const Color textMuted = Color(0xFF6B7570);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: scaffoldBg,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.circle_outlined, color: textMuted, size: 15),
-        ),
-
-        const SizedBox(height: 6),
-
-        Text(day, style: const TextStyle(color: textMuted, fontSize: 10)),
-      ],
     );
   }
 }

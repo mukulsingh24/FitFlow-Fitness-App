@@ -22,6 +22,7 @@ from schemas import (
     WorkoutCreate,
     PersonalInfoUpdate,
     WeightCreate,
+    WeightUpdate,   
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -601,3 +602,134 @@ def get_weight_history(
         }
         for record in records
     ]
+
+@app.put("/weight/{weight_id}")
+def update_weight(
+    weight_id: int,
+    weight_data: WeightUpdate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(WeightLog)
+        .filter(
+            WeightLog.id == weight_id,
+            WeightLog.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Weight record not found",
+        )
+
+    record.weight = weight_data.weight
+    record.notes = weight_data.notes
+
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": "Weight updated successfully",
+        "id": record.id,
+        "weight": record.weight,
+        "notes": record.notes,
+        "logged_at": record.logged_at,
+        "created_at": record.created_at,
+    }
+
+
+@app.delete("/weight/{weight_id}")
+def delete_weight(
+    weight_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(WeightLog)
+        .filter(
+            WeightLog.id == weight_id,
+            WeightLog.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Weight record not found",
+        )
+
+    db.delete(record)
+    db.commit()
+
+    return {
+        "message": "Weight deleted successfully"
+    }
+
+@app.get("/weight/latest")
+def get_latest_weight(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(WeightLog)
+        .filter(WeightLog.user_id == user.id)
+        .order_by(WeightLog.logged_at.desc())
+        .first()
+    )
+
+    if record is None:
+        return None
+
+    return {
+        "id": record.id,
+        "weight": record.weight,
+        "notes": record.notes,
+        "logged_at": record.logged_at,
+        "created_at": record.created_at,
+    }

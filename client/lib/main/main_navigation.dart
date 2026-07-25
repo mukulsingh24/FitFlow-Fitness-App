@@ -47,7 +47,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
       const WorkoutScreen(),
 
-      const PersonalInformationScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
