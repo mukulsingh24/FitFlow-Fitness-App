@@ -1205,3 +1205,88 @@ def delete_calories(
     return {
         "message": "Calorie record deleted successfully"
     }
+
+@app.delete("/workouts/{workout_id}")
+def delete_workout(
+    workout_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = db.query(User).filter(
+        User.firebase_uid == firebase_uid
+    ).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    workout = db.query(Workout).filter(
+        Workout.id == workout_id,
+        Workout.user_id == user.id,
+    ).first()
+
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    db.delete(workout)
+    db.commit()
+
+    return {"message": "Workout deleted successfully"}
+
+@app.put("/workouts/{workout_id}")
+def update_workout(
+    workout_id: int,
+    workout_data: WorkoutCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = db.query(User).filter(
+        User.firebase_uid == firebase_uid
+    ).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    workout = db.query(Workout).filter(
+        Workout.id == workout_id,
+        Workout.user_id == user.id,
+    ).first()
+
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    workout.split = workout_data.split
+    workout.workout_day = workout_data.workout_day
+    workout.workout_date = workout_data.workout_date
+
+    workout.exercises.clear()
+
+    db.flush()
+
+    for exercise_data in workout_data.exercises:
+        exercise = Exercise(
+            workout=workout,
+            name=exercise_data.name,
+        )
+
+        db.add(exercise)
+        db.flush()
+
+        for i in range(exercise_data.sets):
+            db.add(
+                WorkoutSet(
+                    exercise=exercise,
+                    set_number=i + 1,
+                    reps=exercise_data.reps,
+                    weight=exercise_data.working_weight,
+                )
+            )
+
+    db.commit()
+
+    return {
+        "message": "Workout updated successfully",
+    }

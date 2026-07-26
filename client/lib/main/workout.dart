@@ -137,7 +137,10 @@ const Map<String, List<String>> exerciseLibrary = {
 };
 
 class WorkoutScreen extends StatefulWidget {
-  const WorkoutScreen({super.key});
+  final Map<String, dynamic>? workoutToEdit;
+  final bool isEditing;
+
+  const WorkoutScreen({super.key, this.workoutToEdit, this.isEditing = false});
 
   @override
   State<WorkoutScreen> createState() => _WorkoutScreenState();
@@ -167,6 +170,61 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void initState() {
     super.initState();
     _loadWorkoutHistory();
+    if (widget.isEditing && widget.workoutToEdit != null) {
+      _loadWorkoutForEditing();
+    }
+  }
+
+  void _loadWorkoutForEditing() {
+    final workout = widget.workoutToEdit!;
+
+    selectedSplit = workout['split'];
+    selectedWorkoutDay = workout['workout_day'];
+    selectedDate = DateTime.parse(workout['workout_date']);
+
+    exercises.clear();
+
+    final exerciseList = workout['exercises'] as List;
+
+    for (final exercise in exerciseList) {
+      final sets = exercise['sets'] as List;
+
+      exercises.add(
+        WorkoutExercise(
+          id: exercise['id'].toString(),
+          name: exercise['name'],
+          workoutDay: selectedWorkoutDay,
+          sets: sets.length,
+          reps: sets.first['reps'],
+          workingWeight: (sets.first['weight'] as num?)?.toDouble() ?? 0,
+          isCustom: false,
+        ),
+      );
+    }
+  }
+
+  int get currentStreak {
+    if (workoutDates.isEmpty) return 0;
+
+    final today = DateTime.now();
+    DateTime current = DateTime(today.year, today.month, today.day);
+
+    if (!workoutDates.contains(current)) {
+      current = current.subtract(const Duration(days: 1));
+
+      if (!workoutDates.contains(current)) {
+        return 0;
+      }
+    }
+
+    int streak = 0;
+
+    while (workoutDates.contains(current)) {
+      streak++;
+      current = current.subtract(const Duration(days: 1));
+    }
+
+    return streak;
   }
 
   Future<void> _loadWorkoutHistory() async {
@@ -354,7 +412,104 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       ),
                     ),
 
-                    const Icon(Icons.chevron_right_rounded, color: textMuted),
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert_rounded,
+                        color: textMuted,
+                      ),
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+                          final updated = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => WorkoutScreen(
+                                isEditing: true,
+                                workoutToEdit: workout,
+                              ),
+                            ),
+                          );
+
+                          if (updated == true) {
+                            await _loadWorkoutHistory();
+                          }
+                        } else if (value == 'delete') {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('Delete Workout'),
+                                content: const Text(
+                                  'Are you sure you want to delete this workout?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, false);
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, true);
+                                    },
+                                    child: const Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+
+                          if (confirm == true) {
+                            try {
+                              await ApiService.deleteWorkout(workout['id']);
+
+                              await _loadWorkoutHistory();
+
+                              if (!mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Workout deleted successfully'),
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to delete workout: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined),
+                              SizedBox(width: 10),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, color: Colors.red),
+                              SizedBox(width: 10),
+                              Text('Delete'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -759,10 +914,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     });
   }
 
-  void _addExercise(WorkoutExercise exercise) {
-    setState(() {
-      exercises.add(exercise);
-    });
+  void _editExercise(int index) {
+    _showAddExerciseSheet(context, exercise: exercises[index], index: index);
   }
 
   Future<void> _finishWorkout() async {
@@ -780,27 +933,50 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         };
       }).toList();
 
-      final result = await ApiService.saveWorkout(
-        split: selectedSplit,
-        workoutDay: selectedWorkoutDay,
-        workoutDate: selectedDate,
-        exercises: workoutExercises,
-      );
-      await _loadWorkoutHistory();
-      debugPrint('WORKOUT SAVED: $result');
+      if (widget.isEditing) {
+        await ApiService.updateWorkout(
+          id: widget.workoutToEdit!['id'],
+          split: selectedSplit,
+          workoutDay: selectedWorkoutDay,
+          workoutDate: selectedDate,
+          exercises: workoutExercises,
+        );
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setState(() {
-        exercises.clear();
-      });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Workout updated successfully!'),
+            backgroundColor: primaryDark,
+          ),
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Workout saved successfully!'),
-          backgroundColor: primaryDark,
-        ),
-      );
+        Navigator.pop(context, true);
+      } else {
+        final result = await ApiService.saveWorkout(
+          split: selectedSplit,
+          workoutDay: selectedWorkoutDay,
+          workoutDate: selectedDate,
+          exercises: workoutExercises,
+        );
+
+        debugPrint('WORKOUT SAVED: $result');
+
+        await _loadWorkoutHistory();
+
+        if (!mounted) return;
+
+        setState(() {
+          exercises.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Workout saved successfully!'),
+            backgroundColor: primaryDark,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('WORKOUT SAVE ERROR: $e');
 
@@ -954,7 +1130,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: scaffoldBg,
         elevation: 0,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -965,9 +1141,33 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            Text(
-              "Track every set and every rep",
-              style: TextStyle(color: textMuted, fontSize: 12),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "Track every set and every rep",
+                    style: TextStyle(color: textMuted, fontSize: 12),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: softMint,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "🔥 $currentStreak",
+                    style: const TextStyle(
+                      color: primaryDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1017,9 +1217,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               exercises.isEmpty
                   ? _buildEmptyWorkout()
                   : Column(
-                      children: exercises
-                          .map((e) => _buildExerciseCard(e))
-                          .toList(),
+                      children: exercises.asMap().entries.map((entry) {
+                        return _buildExerciseCard(entry.value, entry.key);
+                      }).toList(),
                     ),
 
               const SizedBox(height: 18),
@@ -1098,9 +1298,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       ),
                     ),
                     icon: const Icon(Icons.check_circle_outline_rounded),
-                    label: const Text(
-                      'FINISH WORKOUT',
-                      style: TextStyle(
+                    label: Text(
+                      widget.isEditing ? 'UPDATE WORKOUT' : 'FINISH WORKOUT',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.7,
                       ),
@@ -1178,7 +1378,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  Widget _buildExerciseCard(WorkoutExercise exercise) {
+  Widget _buildExerciseCard(WorkoutExercise exercise, int index) {
     return Dismissible(
       key: ValueKey(exercise.id),
       direction: DismissDirection.endToStart,
@@ -1217,7 +1417,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 size: 21,
               ),
             ),
+
             const SizedBox(width: 14),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1230,7 +1432,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     exercise.workingWeight > 0
                         ? "${exercise.sets} sets × "
@@ -1240,7 +1444,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                               "${exercise.reps} reps · Bodyweight",
                     style: const TextStyle(color: textMuted, fontSize: 12.5),
                   ),
+
                   const SizedBox(height: 5),
+
                   Row(
                     children: [
                       const Icon(
@@ -1248,7 +1454,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                         size: 13,
                         color: primaryDark,
                       ),
+
                       const SizedBox(width: 4),
+
                       Text(
                         exercise.workoutDay,
                         style: const TextStyle(
@@ -1257,6 +1465,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+
                       if (exercise.isCustom) ...[
                         const SizedBox(width: 8),
                         const Text(
@@ -1269,8 +1478,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(Icons.swipe_left_alt_rounded, color: border, size: 18),
+
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: primaryDark),
+              onPressed: () {
+                _editExercise(index);
+              },
+            ),
           ],
         ),
       ),
@@ -1322,7 +1536,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  void _showAddExerciseSheet(BuildContext context) {
+  void _showAddExerciseSheet(
+    BuildContext context, {
+    WorkoutExercise? exercise,
+    int? index,
+  }) {
     if (selectedWorkoutDay == 'Rest') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1341,10 +1559,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       builder: (context) => _AddExerciseSheet(
         workoutDay: selectedWorkoutDay,
         availableExercises: availableExercises,
+        exercise: exercise,
       ),
     ).then((result) {
       if (result != null && result is WorkoutExercise) {
-        _addExercise(result);
+        setState(() {
+          if (index == null) {
+            exercises.add(result);
+          } else {
+            exercises[index] = result;
+          }
+        });
       }
     });
   }
@@ -1353,10 +1578,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 class _AddExerciseSheet extends StatefulWidget {
   final String workoutDay;
   final List<String> availableExercises;
+  final WorkoutExercise? exercise;
 
   const _AddExerciseSheet({
     required this.workoutDay,
     required this.availableExercises,
+    this.exercise,
   });
 
   @override
@@ -1390,11 +1617,30 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
   bool isCustomExercise = false;
 
   @override
+  @override
   void initState() {
     super.initState();
 
-    if (widget.availableExercises.isNotEmpty) {
-      selectedExercise = widget.availableExercises.first;
+    if (widget.exercise != null) {
+      final e = widget.exercise!;
+
+      selectedExercise = e.name;
+      isCustomExercise = e.isCustom;
+
+      if (e.isCustom) {
+        customExerciseController.text = e.name;
+      }
+
+      setsController.text = e.sets.toString();
+      repsController.text = e.reps.toString();
+
+      if (e.workingWeight > 0) {
+        weightController.text = e.workingWeight.toString();
+      }
+    } else {
+      if (widget.availableExercises.isNotEmpty) {
+        selectedExercise = widget.availableExercises.first;
+      }
     }
   }
 
@@ -1424,9 +1670,10 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
 
       exerciseName = selectedExercise!;
     }
-
     final exercise = WorkoutExercise(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id:
+          widget.exercise?.id ??
+          DateTime.now().microsecondsSinceEpoch.toString(),
       name: exerciseName,
       workoutDay: widget.workoutDay,
       sets: int.parse(setsController.text.trim()),
@@ -1671,9 +1918,11 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
-                        'ADD TO WORKOUT',
-                        style: TextStyle(
+                      child: Text(
+                        widget.exercise == null
+                            ? 'ADD TO WORKOUT'
+                            : 'UPDATE EXERCISE',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.6,
                         ),

@@ -786,4 +786,60 @@ class ApiService {
       throw Exception("Failed to delete calorie record");
     }
   }
+
+  static Future<void> deleteWorkout(int id) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/workouts/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<void> updateWorkout({
+    required int id,
+    required String split,
+    required String workoutDay,
+    required DateTime workoutDate,
+    required List<Map<String, dynamic>> exercises,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/workouts/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "split": split,
+        "workout_day": workoutDay,
+        "workout_date": DateFormat('yyyy-MM-dd').format(workoutDate),
+        "exercises": exercises,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
 }
