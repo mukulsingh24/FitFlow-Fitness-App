@@ -1,228 +1,196 @@
 # 💪 FitFlow
 
-FitFlow is a modern **Gym & Fitness Management Application** built using **Flutter** for the frontend and **Node.js + Express** for the backend. The application provides a seamless experience for gym members and administrators with secure authentication, workout management, and a clean, responsive interface.
+FitFlow is a full-stack **AI-powered Gym & Fitness Tracking Application** built using **Flutter**, **FastAPI**, **PostgreSQL**, and **Firebase Authentication**. It helps users monitor workouts, BMI, calories, hydration, weight progress, and overall fitness through a clean, modern, and intuitive interface.
 
 ---
 
-## 📸 Screenshots
+# ✨ Features
 
-> Coming Soon
-
----
-
-## ✨ Features
-
-### 👤 User
-- Secure Login & Registration
-- Google Sign-In
+## 👤 Authentication
+- Secure Email & Password Login
+- Firebase Authentication
+- User Registration
 - Forgot Password
-- User Dashboard
-- Profile Management
-- Responsive Modern UI
-- Smooth Navigation
-
-### 🛠️ Admin
-- Separate Admin Login
-- Manage Members
-- View User Details
-- Dashboard
-- Authentication
-
-### 🎨 UI
-- Dark Gym Theme
-- Material 3 Design
-- Responsive Layout
-- Modern Animations
-- Beautiful Fitness-inspired Design
+- Persistent Login Session
+- Secure Logout
 
 ---
 
-## 🏗️ Tech Stack
+## 🏋️ Workout Management
+- Create Custom Workouts
+- Add Multiple Exercises
+- Add Sets, Reps & Weight
+- Edit Existing Workouts
+- Delete Workouts
+- Weekly Workout Tracking
+- Workout History
+- Workout Streak Calculation
 
-### Frontend
+---
+
+## 📊 Health Tracking
+- BMI Calculator
+- Weight Tracking
+- Weight History
+- Daily Calorie Calculator
+- Water Intake Tracker
+- Recent Activity Dashboard
+
+---
+
+## 🔔 Smart Notifications
+- Local Notifications
+- Backend Notification Storage
+- Mark as Read
+- Mark All as Read
+- Delete Notifications
+- Unread Notification Badge
+
+---
+
+## 👤 User Profile
+- Profile Management
+- Update Personal Information
+- Fitness Overview
+- Health Statistics
+
+---
+
+## 🎨 UI/UX
+- Modern Material 3 Design
+- Responsive Layout
+- Beautiful Fitness UI
+- Smooth Navigation
+- Clean Dashboard
+- Custom Cards & Charts
+- Dark Theme Support
+
+---
+
+# 🏗️ Tech Stack
+
+## Frontend
 - Flutter
 - Dart
 - Material 3
 
-### Backend
-- Node.js
-- Express.js
+## Backend
+- FastAPI
+- Python
+- REST APIs
 
-### Database
-- PostgreSQL
+## Database
+- PostgreSQL (Supabase)
 
-### ORM
-- Prisma ORM
-
-### Authentication
+## Authentication
 - Firebase Authentication
-- Google Sign-In
+
+## Backend Deployment
+- Render
 
 ---
 
-## 📂 Project Structure
+# 📂 Project Structure
 
-```
+```text
 FitFlow
 │
 ├── client
 │   ├── lib
+│   ├── assets
 │   ├── android
 │   ├── ios
-│   ├── assets
 │   └── pubspec.yaml
 │
 ├── server
-│   ├── src
-│   ├── prisma
-│   ├── routes
-│   ├── controllers
-│   ├── middleware
-│   └── package.json
+│   ├── routers
+│   ├── schemas
+│   ├── models.py
+│   ├── database.py
+│   ├── firebase_auth.py
+│   ├── main.py
+│   └── requirements.txt
 │
-├── .gitignore
 └── README.md
 ```
+---
+
+# 🔐 Authentication
+
+- Firebase Email & Password Authentication
+- Secure Token Verification
+- Protected API Routes
+- User Session Management
 
 ---
 
-## 🚀 Getting Started
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/your-username/FitFlow.git
-```
-
-```bash
-cd FitFlow
-```
-
----
-
-## 📱 Frontend Setup
-
-```bash
-cd client
-```
-
-Install dependencies
-
-```bash
-flutter pub get
-```
-
-Run the application
-
-```bash
-flutter run
-```
-
----
-
-## ⚙️ Backend Setup
-
-```bash
-cd server
-```
-
-Install dependencies
-
-```bash
-npm install
-```
-
-Create a `.env` file.
-
-Example:
-
-```env
-DATABASE_URL=your_database_url
-JWT_SECRET=your_secret_key
-PORT=5000
-```
-
-Run the backend
-
-```bash
-npm run dev
-```
-
----
-
-## 🔐 Authentication
-
-- Email & Password Login
-- Google Sign-In
-- Forgot Password
-- Firebase Authentication
-
----
-
-## 📱 Platforms
+# 📱 Supported Platforms
 
 - Android
 - iOS
 
 ---
 
-## 🎯 Future Enhancements
+# 🚀 Version 1 Features
 
-- Workout Plans
-- Diet Tracking
-- Attendance System
-- QR Code Check-in
-- Membership Plans
-- Online Payments
-- Notifications
-- Progress Tracking
-- BMI Calculator
-- Exercise Library
-- Trainer Dashboard
+✅ Firebase Authentication
 
----
+✅ Workout Management
 
-## 🤝 Contributing
+✅ Exercise & Set Tracking
 
-Contributions are welcome.
+✅ BMI Calculator
 
-1. Fork the repository
-2. Create a feature branch
+✅ Calorie Calculator
 
-```bash
-git checkout -b feature-name
-```
+✅ Water Intake Tracker
 
-3. Commit your changes
+✅ Weight Tracker
 
-```bash
-git commit -m "Add new feature"
-```
+✅ Workout Streak
 
-4. Push to your branch
+✅ Weekly Progress
 
-```bash
-git push origin feature-name
-```
+✅ Notification System
 
-5. Open a Pull Request
+✅ User Profile
+
+✅ Responsive UI
+
+✅ FastAPI Backend
+
+✅ PostgreSQL Database
 
 ---
 
-## 📜 License
+# 🛣️ Roadmap (Upcoming Features)
 
-This project is licensed under the MIT License.
+### 🤖 AI Features
+- AI Fitness Chatbot
+- Personalized Workout Recommendations
+- AI Diet Suggestions
+
+### 📈 Progress Tracking
+- Personal Record (PR) Tracker
+- One Rep Max (1RM) Calculator
+- Monthly Analytics
+- Advanced Progress Charts
+- Body Measurements Tracking
+
+### 🍎 Nutrition
+- Daily Meal Planner
+- Macro Tracker
+- Protein Tracker
+- Food Database
+- Barcode Scanner
+- Water Goal Reminder
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Mukul Singh**
-
 GitHub: https://github.com/mukulsingh24
-
-LinkedIn: https://www.linkedin.com/
-
 ---
 
-⭐ If you like this project, don't forget to star the repository!
+If you found this project helpful, consider giving it a ⭐ on GitHub!

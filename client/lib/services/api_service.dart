@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://fitflow-fitness-app.onrender.com';
 
   static Future<Map<String, dynamic>> saveBMI({
     required double weight,
