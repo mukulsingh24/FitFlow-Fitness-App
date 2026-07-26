@@ -14,6 +14,7 @@ from models import (
     Exercise,
     WorkoutSet,
     WeightLog,
+    WaterLog,
 )
 
 from schemas import (
@@ -22,7 +23,10 @@ from schemas import (
     WorkoutCreate,
     PersonalInfoUpdate,
     WeightCreate,
-    WeightUpdate,   
+    WeightUpdate,
+    WaterCreate,
+    WaterUpdate,
+      
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -742,4 +746,223 @@ def get_latest_weight(
         "notes": record.notes,
         "logged_at": record.logged_at,
         "created_at": record.created_at,
+    }
+
+@app.post("/water")
+def save_water(
+    water_data: WaterCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    water_log = WaterLog(
+        user_id=user.id,
+        amount_ml=water_data.amount_ml,
+        notes=water_data.notes,
+        logged_at=date.today(),
+    )
+
+    db.add(water_log)
+    db.commit()
+    db.refresh(water_log)
+
+    return {
+        "message": "Water intake saved successfully",
+        "id": water_log.id,
+        "amount_ml": water_log.amount_ml,
+        "notes": water_log.notes,
+        "logged_at": water_log.logged_at,
+        "created_at": water_log.created_at,
+    }
+@app.get("/water/history")
+def get_water_history(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    records = (
+        db.query(WaterLog)
+        .filter(WaterLog.user_id == user.id)
+        .order_by(
+            WaterLog.created_at.desc(),
+            WaterLog.id.desc(),
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": record.id,
+            "amount_ml": record.amount_ml,
+            "notes": record.notes,
+            "logged_at": record.logged_at,
+            "created_at": record.created_at,
+        }
+        for record in records
+    ]
+
+@app.get("/water/today")
+def get_today_water(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    today_logs = (
+        db.query(WaterLog)
+        .filter(
+            WaterLog.user_id == user.id,
+            WaterLog.logged_at == date.today(),
+        )
+        .all()
+    )
+
+    consumed = sum(log.amount_ml for log in today_logs)
+
+    goal = 3000
+
+    remaining = max(goal - consumed, 0)
+
+    percentage = min(round((consumed / goal) * 100), 100)
+
+    glasses = round(consumed / 250, 1)
+
+    return {
+        "goal_ml": goal,
+        "consumed_ml": consumed,
+        "remaining_ml": remaining,
+        "percentage": percentage,
+        "glasses": glasses,
+        "entry_count": len(today_logs),
+    }
+
+@app.put("/water/{water_id}")
+def update_water(
+    water_id: int,
+    water_data: WaterUpdate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(WaterLog)
+        .filter(
+            WaterLog.id == water_id,
+            WaterLog.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Water record not found",
+        )
+
+    record.amount_ml = water_data.amount_ml
+    record.notes = water_data.notes
+
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": "Water entry updated successfully",
+        "id": record.id,
+        "amount_ml": record.amount_ml,
+        "notes": record.notes,
+        "logged_at": record.logged_at,
+        "created_at": record.created_at,
+    }
+
+@app.delete("/water/{water_id}")
+def delete_water(
+    water_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(WaterLog)
+        .filter(
+            WaterLog.id == water_id,
+            WaterLog.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Water record not found",
+        )
+
+    db.delete(record)
+    db.commit()
+
+    return {
+        "message": "Water entry deleted successfully"
     }

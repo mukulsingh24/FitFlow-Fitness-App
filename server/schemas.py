@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from pydantic import BaseModel, Field
 from typing import List
 from datetime import date
+from typing import Optional
 class BMICreate(BaseModel):
     weight: float = Field(gt=0)
     height_cm: float = Field(gt=0)
@@ -87,3 +88,11 @@ class WeightCreate(BaseModel):
 class WeightUpdate(BaseModel):
     weight: float = Field(gt=0)
     notes: str | None = None
+
+class WaterCreate(BaseModel):
+    amount_ml: int
+    notes: Optional[str] = None
+
+class WaterUpdate(BaseModel):
+    amount_ml: int
+    notes: Optional[str] = None

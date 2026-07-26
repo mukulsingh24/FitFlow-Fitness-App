@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import date,datetime
 
 from database import Base
 
@@ -252,6 +252,35 @@ class WeightLog(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow,
+    )
+
+    user = relationship("User")
+
+class WaterLog(Base):
+    __tablename__ = "water_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    amount_ml = Column(Integer, nullable=False)
+
+    notes = Column(String, nullable=True)
+
+    logged_at = Column(
+        Date,
+        default=date.today,
+        nullable=False,
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
     )
 
     user = relationship("User")
