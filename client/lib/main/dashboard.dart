@@ -28,11 +28,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool isLoadingHealth = true;
   int workoutsThisWeek = 0;
   int currentStreak = 0;
+  int unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     _loadLatestHealthData();
+    _loadUnreadNotifications();
   }
 
   @override
@@ -40,6 +42,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.didUpdateWidget(oldWidget);
 
     _loadLatestHealthData();
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    try {
+      final notifications = await ApiService.getNotifications();
+
+      if (!mounted) return;
+
+      setState(() {
+        unreadNotifications = notifications
+            .where((e) => e["is_read"] == false)
+            .length;
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
   Future<void> _loadLatestHealthData() async {
@@ -194,17 +212,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           IconButton(
             tooltip: "Notifications",
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const NotificationsScreen()),
               );
+
+              _loadUnreadNotifications();
             },
-            icon: const Badge(
-              backgroundColor: primary,
-              label: Text("2"),
-              child: Icon(Icons.notifications_outlined, color: textDark),
-            ),
+            icon: unreadNotifications == 0
+                ? const Icon(Icons.notifications_outlined, color: textDark)
+                : Badge(
+                    backgroundColor: primary,
+                    label: Text(
+                      unreadNotifications > 99
+                          ? "99+"
+                          : unreadNotifications.toString(),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: textDark,
+                    ),
+                  ),
           ),
           const SizedBox(width: 8),
         ],

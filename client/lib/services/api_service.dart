@@ -842,4 +842,112 @@ class ApiService {
       throw Exception(response.body);
     }
   }
+
+  static Future<void> addNotification({
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/notifications"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"title": title, "message": message, "type": type}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<List<dynamic>> getNotifications() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/notifications"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception(response.body);
+  }
+
+  static Future<void> markNotificationRead(int id) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.patch(
+      Uri.parse("$baseUrl/notifications/$id/read"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.patch(
+      Uri.parse("$baseUrl/notifications/read-all"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<void> deleteNotification(int id) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/notifications/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
 }

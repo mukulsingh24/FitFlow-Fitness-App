@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'api_service.dart';
 
 class NotificationService {
   NotificationService._();
@@ -99,78 +100,131 @@ class NotificationService {
 
   Future<void> showWelcomeNotification() async {
     await showNotification(
-      title: "🎉 Welcome to FitFlow",
+      title: "Welcome to FitFlow",
       body: "Your fitness journey starts today!",
+    );
+
+    await ApiService.addNotification(
+      title: "Welcome",
+      message: "Your fitness journey starts today!",
+      type: "welcome",
     );
   }
 
   Future<void> showLoginSuccess() async {
     await showNotification(
-      title: "👋 Welcome Back",
+      title: "Welcome Back",
       body: "Let's achieve today's fitness goals!",
+    );
+
+    await ApiService.addNotification(
+      title: "Welcome Back",
+      message: "Let's achieve today's fitness goals!",
+      type: "login",
     );
   }
 
   Future<void> showWorkoutSaved() async {
     await showNotification(
-      title: "💪 Workout Saved",
+      title: "Workout Saved",
       body: "Awesome! Keep your streak alive.",
+    );
+
+    await ApiService.addNotification(
+      title: "Workout Saved",
+      message: "Awesome! Keep your streak alive.",
+      type: "workout",
     );
   }
 
   Future<void> showWorkoutUpdated() async {
     await showNotification(
-      title: "✏️ Workout Updated",
+      title: "Workout Updated",
       body: "Your workout has been updated successfully.",
+    );
+
+    await ApiService.addNotification(
+      title: "Workout Updated",
+      message: "Your workout has been updated successfully.",
+      type: "workout",
     );
   }
 
   Future<void> showWorkoutDeleted() async {
     await showNotification(
-      title: "🗑️ Workout Deleted",
+      title: "Workout Deleted",
       body: "The workout has been removed.",
+    );
+
+    await ApiService.addNotification(
+      title: "Workout Deleted",
+      message: "The workout has been removed.",
+      type: "workout",
     );
   }
 
   Future<void> showWaterLogged() async {
     await showNotification(
-      title: "💧 Water Logged",
+      title: "Water Logged",
       body: "Great! Keep yourself hydrated.",
+    );
+
+    await ApiService.addNotification(
+      title: "Water Logged",
+      message: "Great! Keep yourself hydrated.",
+      type: "water",
     );
   }
 
   Future<void> showCaloriesUpdated() async {
     await showNotification(
-      title: "🔥 Calories Updated",
+      title: "Calories Updated",
       body: "Your calorie intake has been saved.",
+    );
+
+    await ApiService.addNotification(
+      title: "Calories Updated",
+      message: "Your calorie intake has been saved.",
+      type: "calorie",
     );
   }
 
   Future<void> showWeightUpdated() async {
     await showNotification(
-      title: "⚖️ Weight Updated",
+      title: "Weight Updated",
       body: "Your latest weight has been recorded.",
+    );
+
+    await ApiService.addNotification(
+      title: "Weight Updated",
+      message: "Your latest weight has been recorded.",
+      type: "weight",
     );
   }
 
   Future<void> showBMIUpdated() async {
     await showNotification(
-      title: "📊 BMI Updated",
+      title: "BMI Updated",
       body: "Your BMI has been calculated successfully.",
     );
-  }
 
-  Future<void> showTestNotification() async {
-    await showNotification(
-      title: "FitFlow",
-      body: "Notifications are working successfully 🎉",
+    await ApiService.addNotification(
+      title: "BMI Updated",
+      message: "Your BMI has been calculated successfully.",
+      type: "bmi",
     );
   }
 
   Future<void> showProfileUpdated() async {
     await showNotification(
-      title: "👤 Profile Updated",
+      title: "Profile Updated",
       body: "Your personal information has been updated successfully.",
+    );
+
+    await ApiService.addNotification(
+      title: "Profile Updated",
+      message: "Your personal information has been updated successfully.",
+      type: "profile",
     );
   }
 }

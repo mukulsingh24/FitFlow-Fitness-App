@@ -3,20 +3,20 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class NotificationItem {
-  final String id;
+  final int id;
   final String title;
   final String message;
+  final String type;
   final String time;
-  final IconData icon;
   bool isRead;
 
   NotificationItem({
     required this.id,
     required this.title,
     required this.message,
+    required this.type,
     required this.time,
-    required this.icon,
-    this.isRead = false,
+    required this.isRead,
   });
 }
 
@@ -39,19 +39,41 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   bool isLoading = true;
   List<NotificationItem> notifications = [];
+  IconData _getIcon(String type) {
+    switch (type) {
+      case "workout":
+        return Icons.fitness_center;
+
+      case "water":
+        return Icons.water_drop;
+
+      case "weight":
+        return Icons.monitor_weight;
+
+      case "bmi":
+        return Icons.monitor_weight_outlined;
+
+      case "calorie":
+        return Icons.local_fire_department;
+
+      case "profile":
+        return Icons.person;
+
+      case "login":
+        return Icons.login;
+
+      case "welcome":
+        return Icons.celebration;
+
+      default:
+        return Icons.notifications;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _loadNotifications();
-  }
-
-  Future<List<dynamic>> _safeCall(Future<List<dynamic>> Function() call) async {
-    try {
-      return await call();
-    } catch (_) {
-      return [];
-    }
   }
 
   String _timeAgo(dynamic rawDate) {
@@ -72,155 +94,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
-    final results = await Future.wait([
-      _safeCall(ApiService.getWorkoutHistory),
-      _safeCall(ApiService.getBMIHistory),
-      _safeCall(ApiService.getCalorieHistory),
-    ]);
+    try {
+      final data = await ApiService.getNotifications();
 
-    final List<dynamic> workouts = results[0];
-    final List<dynamic> bmiRecords = results[1];
-    final List<dynamic> calorieRecords = results[2];
-
-    final DateTime now = DateTime.now();
-    final List<NotificationItem> items = [];
-
-    if (workouts.isEmpty) {
-      items.add(
-        NotificationItem(
-          id: "workout_start",
-          title: "Time to Train",
-          message:
-              "You haven't logged a workout yet. Start your first session today.",
-          time: "Now",
-          icon: Icons.fitness_center,
-        ),
-      );
-    } else {
-      final latestWorkout = workouts.first;
-      final DateTime? workoutDate = DateTime.tryParse(
-        latestWorkout['workout_date']?.toString() ?? '',
-      );
-
-      final bool trainedToday =
-          workoutDate != null &&
-          workoutDate.year == now.year &&
-          workoutDate.month == now.month &&
-          workoutDate.day == now.day;
-
-      if (trainedToday) {
-        items.add(
-          NotificationItem(
-            id: "workout_today",
-            title: "Nice Work!",
-            message:
-                "You've already logged a workout today. Keep the momentum going.",
-            time: _timeAgo(latestWorkout['created_at']),
-            icon: Icons.emoji_events_outlined,
-            isRead: true,
-          ),
-        );
-      } else {
-        items.add(
-          NotificationItem(
-            id: "workout_reminder",
-            title: "Time to Train",
-            message: "Stay consistent. Don't forget to log today's workout.",
-            time: "Today",
-            icon: Icons.fitness_center,
-          ),
-        );
-      }
-
-      final int recentCount = workouts.where((workout) {
-        final DateTime? date = DateTime.tryParse(
-          workout['workout_date']?.toString() ?? '',
-        );
-
-        if (date == null) return false;
-
-        return now.difference(date).inDays <= 7;
-      }).length;
-
-      items.add(
-        NotificationItem(
-          id: "weekly_progress",
-          title: "Weekly Progress",
-          message: recentCount > 0
-              ? "You've logged $recentCount workout${recentCount == 1 ? '' : 's'} in the past 7 days."
-              : "No workouts logged in the past 7 days. Time to get back on track.",
-          time: "This week",
-          icon: Icons.trending_up,
-        ),
-      );
-    }
-
-    if (bmiRecords.isEmpty) {
-      items.add(
-        NotificationItem(
-          id: "bmi_start",
-          title: "Check Your BMI",
-          message: "Calculate your BMI to start tracking your body metrics.",
-          time: "Now",
-          icon: Icons.monitor_weight_outlined,
-        ),
-      );
-    } else {
-      final latestBmi = bmiRecords.first;
-      final DateTime? recordedAt = DateTime.tryParse(
-        latestBmi['created_at']?.toString() ?? '',
-      );
-
-      if (recordedAt != null && now.difference(recordedAt).inDays >= 7) {
-        items.add(
-          NotificationItem(
-            id: "bmi_stale",
-            title: "Weight Check",
-            message: "Update your body weight to keep your progress accurate.",
-            time: _timeAgo(latestBmi['created_at']),
-            icon: Icons.monitor_weight_outlined,
-          ),
-        );
-      }
-    }
-
-    if (calorieRecords.isEmpty) {
-      items.add(
-        NotificationItem(
-          id: "calorie_start",
-          title: "Fuel Your Fitness",
-          message:
-              "Calculate your daily calorie target to plan your nutrition.",
-          time: "Now",
-          icon: Icons.local_fire_department_outlined,
-        ),
-      );
+      notifications = data
+          .map<NotificationItem>(
+            (e) => NotificationItem(
+              id: e["id"],
+              title: e["title"],
+              message: e["message"],
+              type: e["type"],
+              time: _timeAgo(e["created_at"]),
+              isRead: e["is_read"],
+            ),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint(e.toString());
     }
 
     if (!mounted) return;
 
     setState(() {
-      notifications = items;
       isLoading = false;
     });
   }
 
-  void markAllAsRead() {
-    setState(() {
-      for (final notification in notifications) {
-        notification.isRead = true;
-      }
-    });
+  Future<void> markAllAsRead() async {
+    await ApiService.markAllNotificationsRead();
+
+    for (final n in notifications) {
+      n.isRead = true;
+    }
+
+    setState(() {});
   }
 
-  void deleteNotification(int index) {
-    setState(() {
-      notifications.removeAt(index);
-    });
+  Future<void> deleteNotification(int index) async {
+    await ApiService.deleteNotification(notifications[index].id);
+
+    notifications.removeAt(index);
+
+    setState(() {});
   }
 
   @override
@@ -301,8 +218,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   return Dismissible(
                     key: ValueKey(notification.id),
                     direction: DismissDirection.endToStart,
-                    onDismissed: (_) {
-                      deleteNotification(index);
+                    onDismissed: (_) async {
+                      await deleteNotification(index);
                     },
                     background: Container(
                       alignment: Alignment.centerRight,
@@ -317,7 +234,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     ),
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
+                        await ApiService.markNotificationRead(notification.id);
+
                         setState(() {
                           notification.isRead = true;
                         });
@@ -347,7 +266,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 borderRadius: BorderRadius.circular(13),
                               ),
                               child: Icon(
-                                notification.icon,
+                                _getIcon(notification.type),
                                 color: primaryDark,
                               ),
                             ),
