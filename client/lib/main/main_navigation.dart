@@ -4,6 +4,7 @@ import 'dashboard.dart';
 import 'health.dart';
 import 'workout.dart';
 import 'profile.dart';
+import 'package:flutter/services.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -73,7 +74,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           return;
         }
 
-        Navigator.of(context).pop();
+        SystemNavigator.pop();
       },
       child: Scaffold(
         backgroundColor: scaffoldBg,
