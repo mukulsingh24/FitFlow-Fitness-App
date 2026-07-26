@@ -143,7 +143,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            );
           },
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
         ),

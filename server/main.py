@@ -586,11 +586,14 @@ def get_weight_history(
         )
 
     records = (
-        db.query(WeightLog)
-        .filter(WeightLog.user_id == user.id)
-        .order_by(WeightLog.logged_at.desc())
-        .all()
+    db.query(WeightLog)
+    .filter(WeightLog.user_id == user.id)
+    .order_by(
+        WeightLog.created_at.desc(),
+        WeightLog.id.desc(),
     )
+    .all()
+)
 
     return [
         {
@@ -681,6 +684,10 @@ def delete_weight(
             WeightLog.id == weight_id,
             WeightLog.user_id == user.id,
         )
+        .order_by(
+            WeightLog.created_at.desc(),
+            WeightLog.id.desc(),
+        )
         .first()
     )
 
@@ -719,7 +726,10 @@ def get_latest_weight(
     record = (
         db.query(WeightLog)
         .filter(WeightLog.user_id == user.id)
-        .order_by(WeightLog.logged_at.desc())
+        .order_by(
+            WeightLog.created_at.desc(),
+            WeightLog.id.desc(),
+        )
         .first()
     )
 

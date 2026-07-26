@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import './register.dart';
 import './forgot.dart';
-import './admin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../main/main_navigation.dart';
@@ -138,12 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -368,59 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 10),
-
-                const Row(
-                  children: [
-                    Expanded(child: Divider(color: Color(0xFFCBD5E1))),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Text(
-                        "ADMIN",
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Color(0xFFCBD5E1))),
-                  ],
-                ),
-
-                const SizedBox(height: 15),
-
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AdminLoginScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.admin_panel_settings_outlined,
-                    color: Color(0xFF0F172A),
-                  ),
-                  label: const Text(
-                    "Admin Login",
-                    style: TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
               ],
             ),
           ),

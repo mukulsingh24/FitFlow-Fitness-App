@@ -384,6 +384,11 @@ class _WeightScreenState extends State<WeightScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              style: const TextStyle(
+                color: textDark,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 labelText: "Weight",
                 hintText: "Enter today's weight",
