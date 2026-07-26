@@ -1,3 +1,5 @@
+import os
+import json
 import firebase_admin
 
 from firebase_admin import credentials, auth
@@ -5,11 +7,13 @@ from fastapi import Header, HTTPException
 
 
 if not firebase_admin._apps:
-    cred = credentials.Certificate(
-        "firebase-service-account.json"
+    firebase_credentials = json.loads(
+        os.environ["FIREBASE_CREDENTIALS"]
     )
-    firebase_admin.initialize_app(cred)
 
+    cred = credentials.Certificate(firebase_credentials)
+
+    firebase_admin.initialize_app(cred)
 
 async def verify_firebase_token(
     authorization: str = Header(None)
