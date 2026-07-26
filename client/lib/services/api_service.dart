@@ -265,6 +265,7 @@ class ApiService {
   static Future<Map<String, dynamic>> saveWorkout({
     required String split,
     required String workoutDay,
+    required DateTime workoutDate,
     required List<Map<String, dynamic>> exercises,
   }) async {
     final User? user = FirebaseAuth.instance.currentUser;
@@ -289,6 +290,7 @@ class ApiService {
         body: jsonEncode({
           'split': split,
           'workout_day': workoutDay,
+          'workout_date': DateFormat('yyyy-MM-dd').format(workoutDate),
           'exercises': exercises,
         }),
       );

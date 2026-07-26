@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class WorkoutExercise {
   final String id;
@@ -155,6 +156,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   String selectedSplit = 'Push Pull Legs';
   String selectedWorkoutDay = 'Push';
+  DateTime selectedDate = DateTime.now();
+  DateTime focusedDay = DateTime.now();
+  CalendarFormat calendarFormat = CalendarFormat.month;
 
   final List<WorkoutExercise> exercises = [];
   List<dynamic> workoutHistory = [];
@@ -184,6 +188,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         isLoadingHistory = false;
       });
     }
+  }
+
+  Set<DateTime> get workoutDates {
+    return workoutHistory.map<DateTime>((workout) {
+      final date = DateTime.parse(workout['workout_date']);
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
   }
 
   List<String> get availableWorkoutDays {
@@ -772,6 +783,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       final result = await ApiService.saveWorkout(
         split: selectedSplit,
         workoutDay: selectedWorkoutDay,
+        workoutDate: selectedDate,
         exercises: workoutExercises,
       );
       await _loadWorkoutHistory();
@@ -967,7 +979,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildWorkoutHeader(),
+              _buildWorkoutCalendar(),
               const SizedBox(height: 20),
               _buildTrainingSelector(),
               const SizedBox(height: 26),
@@ -1107,69 +1119,61 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  Widget _buildWorkoutHeader() {
-    final DateTime now = DateTime.now();
-
-    final List<String> months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
+  Widget _buildWorkoutCalendar() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: softMint,
-        borderRadius: BorderRadius.circular(22),
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.fitness_center,
-              color: primaryDark,
-              size: 26,
-            ),
+      child: TableCalendar(
+        firstDay: DateTime.utc(2020, 1, 1),
+        lastDay: DateTime.utc(2035, 12, 31),
+        focusedDay: focusedDay,
+        calendarFormat: calendarFormat,
+        selectedDayPredicate: (day) {
+          return isSameDay(selectedDate, day);
+        },
+        eventLoader: (day) {
+          final normalized = DateTime(day.year, day.month, day.day);
+
+          if (workoutDates.contains(normalized)) {
+            return ['🔥'];
+          }
+
+          return [];
+        },
+        onDaySelected: (selected, focused) {
+          setState(() {
+            selectedDate = selected;
+            focusedDay = focused;
+          });
+        },
+        calendarBuilders: CalendarBuilders(
+          markerBuilder: (context, date, events) {
+            if (events.isEmpty) return null;
+
+            return const Positioned(
+              bottom: 2,
+              child: Text('🔥', style: TextStyle(fontSize: 12)),
+            );
+          },
+        ),
+        headerStyle: const HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+        ),
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: primaryDark,
+            shape: BoxShape.circle,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercises.isEmpty ? "Ready to train?" : "Keep it going!",
-                  style: const TextStyle(
-                    color: textDark,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "${months[now.month - 1]} ${now.day}, ${now.year}",
-                  style: const TextStyle(color: textMuted, fontSize: 13),
-                ),
-              ],
-            ),
+          selectedDecoration: BoxDecoration(
+            color: primary,
+            shape: BoxShape.circle,
           ),
-          const Icon(Icons.bolt_rounded, color: primaryDark, size: 28),
-        ],
+        ),
       ),
     );
   }

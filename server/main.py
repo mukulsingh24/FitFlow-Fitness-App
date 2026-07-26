@@ -125,7 +125,6 @@ def save_bmi(
     else:
         category = "Obese"
 
-    # Save health record
     health_record = HealthRecord(
         user_id=user.id,
         weight=bmi_data.weight,
@@ -145,6 +144,7 @@ def save_bmi(
         "category": category,
         "created_at": health_record.created_at,
     }
+
 @app.get("/health/bmi")
 def get_bmi_history(
     firebase_user=Depends(verify_firebase_token),
@@ -353,7 +353,7 @@ def create_workout(
             user_id=user.id,
             split=workout_data.split,
             workout_day=workout_data.workout_day,
-            workout_date=date.today(),
+            workout_date=workout_data.workout_date,
         )
         db.add(workout)
         db.flush()

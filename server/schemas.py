@@ -61,7 +61,7 @@ class WorkoutCreate(BaseModel):
         min_length=1,
         max_length=50
     )
-
+    workout_date: date  
     exercises: List[WorkoutExerciseCreate]
 
 
