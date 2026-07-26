@@ -251,6 +251,230 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
     );
   }
 
+  Future<void> deleteCalories(int id) async {
+    try {
+      await ApiService.deleteCalories(id);
+      await loadCalorieHistory();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Calorie record deleted successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> editCalories(Map<String, dynamic> record) async {
+    final ageController = TextEditingController(text: record["age"].toString());
+
+    final heightController = TextEditingController(
+      text: record["height_cm"].toString(),
+    );
+
+    final weightController = TextEditingController(
+      text: record["weight_kg"].toString(),
+    );
+
+    String gender = record["gender"];
+    String activity = record["activity_level"];
+    String goal = record["goal"];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Edit Calorie Record",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextField(
+                      controller: ageController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Age"),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: gender,
+                      decoration: const InputDecoration(labelText: "Gender"),
+                      items: const [
+                        DropdownMenuItem(value: "Male", child: Text("Male")),
+                        DropdownMenuItem(
+                          value: "Female",
+                          child: Text("Female"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setModalState(() {
+                            gender = value;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: "Height (cm)",
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: weightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: "Weight (kg)",
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: activity,
+                      decoration: const InputDecoration(
+                        labelText: "Activity Level",
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "Sedentary",
+                          child: Text("Sedentary"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Lightly Active",
+                          child: Text("Lightly Active"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Moderately Active",
+                          child: Text("Moderately Active"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Very Active",
+                          child: Text("Very Active"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Extra Active",
+                          child: Text("Extra Active"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setModalState(() {
+                            activity = value;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: goal,
+                      decoration: const InputDecoration(labelText: "Goal"),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "Lose Weight",
+                          child: Text("Lose Weight"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Maintain Weight",
+                          child: Text("Maintain Weight"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Gain Weight",
+                          child: Text("Gain Weight"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setModalState(() {
+                            goal = value;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        child: const Text("Update"),
+                        onPressed: () async {
+                          await ApiService.updateCalories(
+                            id: record["id"],
+                            age: int.parse(ageController.text),
+                            gender: gender,
+                            heightCm: double.parse(heightController.text),
+                            weightKg: double.parse(weightController.text),
+                            activityLevel: activity,
+                            goal: goal,
+                          );
+
+                          Navigator.pop(context);
+
+                          await loadCalorieHistory();
+
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Calorie record updated successfully",
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1124,9 +1348,67 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
                   ),
                 ),
 
-                Text(
-                  date,
-                  style: const TextStyle(color: textMuted, fontSize: 11),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      date,
+                      style: const TextStyle(color: textMuted, fontSize: 11),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            editCalories(record);
+                          },
+                        ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text("Delete Record"),
+                                content: const Text(
+                                  "Delete this calorie record?",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text("Cancel"),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text("Delete"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              deleteCalories(record["id"]);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),

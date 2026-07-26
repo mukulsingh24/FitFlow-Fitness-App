@@ -725,4 +725,63 @@ class ApiService {
       );
     }
   }
+
+  static Future<Map<String, dynamic>> updateCalories({
+    required int id,
+    required int age,
+    required String gender,
+    required double heightCm,
+    required double weightKg,
+    required String activityLevel,
+    required String goal,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/health/calories/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "age": age,
+        "gender": gender,
+        "height_cm": heightCm,
+        "weight_kg": weightKg,
+        "activity_level": activityLevel,
+        "goal": goal,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception("Failed to update calorie record");
+  }
+
+  static Future<void> deleteCalories(int id) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/health/calories/$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to delete calorie record");
+    }
+  }
 }
