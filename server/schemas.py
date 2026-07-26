@@ -96,3 +96,8 @@ class WaterCreate(BaseModel):
 class WaterUpdate(BaseModel):
     amount_ml: int
     notes: Optional[str] = None
+
+class BMIUpdate(BaseModel):
+    weight: float = Field(gt=0)
+    height_cm: float = Field(gt=0)
+

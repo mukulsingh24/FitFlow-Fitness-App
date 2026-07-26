@@ -26,6 +26,7 @@ from schemas import (
     WeightUpdate,
     WaterCreate,
     WaterUpdate,
+    BMIUpdate,
       
 )
 Base.metadata.create_all(bind=engine)
@@ -688,10 +689,6 @@ def delete_weight(
             WeightLog.id == weight_id,
             WeightLog.user_id == user.id,
         )
-        .order_by(
-            WeightLog.created_at.desc(),
-            WeightLog.id.desc(),
-        )
         .first()
     )
 
@@ -966,3 +963,92 @@ def delete_water(
     return {
         "message": "Water entry deleted successfully"
     }
+
+@app.put("/health/bmi/{record_id}")
+def update_bmi(
+    record_id: int,
+    bmi_data: BMIUpdate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    record = (
+        db.query(HealthRecord)
+        .filter(
+            HealthRecord.id == record_id,
+            HealthRecord.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(status_code=404, detail="BMI record not found")
+
+    height_m = bmi_data.height_cm / 100
+
+    bmi = round(
+        bmi_data.weight / (height_m * height_m),
+        2,
+    )
+
+    record.weight = bmi_data.weight
+    record.height_cm = bmi_data.height_cm
+    record.bmi = bmi
+
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": "BMI updated successfully",
+        "record": {
+            "id": record.id,
+            "weight": record.weight,
+            "height_cm": record.height_cm,
+            "bmi": record.bmi,
+            "created_at": record.created_at,
+        },
+    }
+
+@app.delete("/health/bmi/{record_id}")
+def delete_bmi(
+    record_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    record = (
+        db.query(HealthRecord)
+        .filter(
+            HealthRecord.id == record_id,
+            HealthRecord.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(status_code=404, detail="BMI record not found")
+
+    db.delete(record)
+    db.commit()
+
+    return {"message": "BMI deleted successfully"}

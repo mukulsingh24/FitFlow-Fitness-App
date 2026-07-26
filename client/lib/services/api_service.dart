@@ -672,4 +672,57 @@ class ApiService {
       throw Exception(response.body);
     }
   }
+
+  static Future<void> updateBMI({
+    required int id,
+    required double weight,
+    required double heightCm,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User is not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/health/bmi/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'weight': weight, 'height_cm': heightCm}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to update BMI (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
+
+  static Future<void> deleteBMI(int id) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User is not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/health/bmi/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to delete BMI (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
 }

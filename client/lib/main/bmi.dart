@@ -76,7 +76,6 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
 
     final double weight = double.parse(weightController.text.trim());
 
-    // Calculate BMI locally first
     final double heightM = heightCm / 100;
     final double localBmi = weight / (heightM * heightM);
 
@@ -99,7 +98,6 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
     try {
       await ApiService.saveBMI(weight: weight, heightCm: heightCm);
 
-      // Refresh BMI history after successful save
       await loadBMIHistory();
 
       if (!mounted) return;
@@ -132,6 +130,239 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
       bmi = null;
       bmiCategory = "";
     });
+  }
+
+  Future<void> deleteBMI(int id) async {
+    try {
+      await ApiService.deleteBMI(id);
+
+      await loadBMIHistory();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("BMI deleted successfully")));
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  void editBMI(Map<String, dynamic> record) {
+    final TextEditingController weightController = TextEditingController(
+      text: record["weight"].toString(),
+    );
+
+    final TextEditingController heightController = TextEditingController(
+      text: record["height_cm"].toString(),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 14, 22, 26),
+            decoration: const BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: border,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    "Edit BMI Record",
+                    style: TextStyle(
+                      color: textDark,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  TextField(
+                    controller: heightController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: "Height (cm)",
+                      prefixIcon: const Icon(Icons.height, color: primaryDark),
+                      filled: true,
+                      fillColor: scaffoldBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: primary,
+                          width: 1.6,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: weightController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: "Weight (kg)",
+                      prefixIcon: const Icon(
+                        Icons.monitor_weight_outlined,
+                        color: primaryDark,
+                      ),
+                      filled: true,
+                      fillColor: scaffoldBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: primary,
+                          width: 1.6,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: textMuted,
+                              side: const BorderSide(color: border),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              "CANCEL",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final double? height = double.tryParse(
+                                heightController.text.trim(),
+                              );
+
+                              final double? weight = double.tryParse(
+                                weightController.text.trim(),
+                              );
+
+                              if (height == null ||
+                                  weight == null ||
+                                  height <= 0 ||
+                                  weight <= 0) {
+                                return;
+                              }
+
+                              try {
+                                await ApiService.updateBMI(
+                                  id: record["id"],
+                                  weight: weight,
+                                  heightCm: height,
+                                );
+
+                                if (!mounted) return;
+
+                                Navigator.pop(context);
+
+                                await loadBMIHistory();
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("BMI updated successfully"),
+                                  ),
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              "UPDATE",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Color _categoryColor(String category) {
@@ -602,9 +833,68 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
                   ),
                 ),
 
-                Text(
-                  date,
-                  style: const TextStyle(color: textMuted, fontSize: 11),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      date,
+                      style: const TextStyle(color: textMuted, fontSize: 11),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            editBMI(record);
+                          },
+                        ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          onPressed: () async {
+                            final bool? confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text("Delete BMI"),
+                                content: const Text("Delete this BMI record?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, false);
+                                    },
+                                    child: const Text("Cancel"),
+                                  ),
+
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, true);
+                                    },
+                                    child: const Text("Delete"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              deleteBMI(record["id"]);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
