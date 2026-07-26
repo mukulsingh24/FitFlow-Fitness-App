@@ -108,3 +108,20 @@ class CalorieUpdate(BaseModel):
     weight_kg: float = Field(gt=0)
     activity_level: str
     goal: str
+
+class NotificationCreate(BaseModel):
+    title: str
+    message: str
+    type: str
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    title: str
+    message: str
+    type: str
+    is_read: bool
+    created_at: date | None = None
+
+    class Config:
+        from_attributes = True

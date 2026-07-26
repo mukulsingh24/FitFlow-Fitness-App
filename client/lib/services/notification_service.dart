@@ -166,4 +166,11 @@ class NotificationService {
       body: "Notifications are working successfully 🎉",
     );
   }
+
+  Future<void> showProfileUpdated() async {
+    await showNotification(
+      title: "👤 Profile Updated",
+      body: "Your personal information has been updated successfully.",
+    );
+  }
 }

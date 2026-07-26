@@ -15,6 +15,7 @@ from models import (
     WorkoutSet,
     WeightLog,
     WaterLog,
+    Notification,
 )
 
 from schemas import (
@@ -28,6 +29,7 @@ from schemas import (
     WaterUpdate,
     BMIUpdate,
     CalorieUpdate,
+    NotificationCreate,
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -1289,4 +1291,212 @@ def update_workout(
 
     return {
         "message": "Workout updated successfully",
+    }
+
+
+@app.post("/notifications")
+def create_notification(
+    notification: NotificationCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    new_notification = Notification(
+        user_id=user.id,
+        title=notification.title,
+        message=notification.message,
+        type=notification.type,
+    )
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return {
+        "message": "Notification created successfully",
+        "notification": {
+            "id": new_notification.id,
+            "title": new_notification.title,
+            "message": new_notification.message,
+            "type": new_notification.type,
+            "is_read": new_notification.is_read,
+            "created_at": new_notification.created_at,
+        },
+    }
+
+@app.post("/notifications")
+def create_notification(
+    notification: NotificationCreate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    new_notification = Notification(
+        user_id=user.id,
+        title=notification.title,
+        message=notification.message,
+        type=notification.type,
+    )
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return {
+        "message": "Notification created successfully",
+        "notification": {
+            "id": new_notification.id,
+            "title": new_notification.title,
+            "message": new_notification.message,
+            "type": new_notification.type,
+            "is_read": new_notification.is_read,
+            "created_at": new_notification.created_at,
+        },
+    }
+
+
+
+@app.get("/notifications")
+def get_notifications(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    notifications = (
+        db.query(Notification)
+        .filter(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": n.id,
+            "title": n.title,
+            "message": n.message,
+            "type": n.type,
+            "is_read": n.is_read,
+            "created_at": n.created_at,
+        }
+        for n in notifications
+    ]
+
+@app.patch("/notifications/read-all")
+def mark_all_notifications_read(
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    notifications = (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == user.id,
+            Notification.is_read == False,
+        )
+        .all()
+    )
+
+    for notification in notifications:
+        notification.is_read = True
+
+    db.commit()
+
+    return {
+        "message": "All notifications marked as read",
+    }
+
+
+@app.delete("/notifications/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    notification = (
+        db.query(Notification)
+        .filter(
+            Notification.id == notification_id,
+            Notification.user_id == user.id,
+        )
+        .first()
+    )
+
+    if notification is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Notification not found",
+        )
+
+    db.delete(notification)
+
+    db.commit()
+
+    return {
+        "message": "Notification deleted successfully",
     }

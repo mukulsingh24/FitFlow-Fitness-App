@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   const PersonalInformationScreen({super.key});
@@ -87,7 +88,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         gender: _selectedGender,
         dateOfBirth: _selectedDateOfBirth,
       );
-
+      await NotificationService.instance.showProfileUpdated();
       if (!mounted) return;
 
       setState(() {

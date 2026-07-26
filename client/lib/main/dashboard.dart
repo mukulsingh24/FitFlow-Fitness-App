@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'notifications.dart';
 import '../services/api_service.dart';
-import '../services/notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -264,13 +263,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               const SizedBox(height: 26),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await NotificationService.instance.showTestNotification();
-                },
-                icon: const Icon(Icons.notifications),
-                label: const Text("Test Notification"),
-              ),
               const Row(
                 children: [
                   Text(
