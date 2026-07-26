@@ -552,4 +552,124 @@ class ApiService {
 
     return history.first;
   }
+
+  static Future<void> addWater({required int amountMl, String? notes}) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/water"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"amount_ml": amountMl, "notes": notes}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<List<dynamic>> getWaterHistory() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/water/history"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    }
+
+    throw Exception(response.body);
+  }
+
+  static Future<Map<String, dynamic>> getTodayWater() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/water/today"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception(response.body);
+  }
+
+  static Future<void> updateWater({
+    required int id,
+    required int amountMl,
+    String? notes,
+  }) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/water/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"amount_ml": amountMl, "notes": notes}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
+
+  static Future<void> deleteWater(int id) async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final token = await user.getIdToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/water/$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.body);
+    }
+  }
 }

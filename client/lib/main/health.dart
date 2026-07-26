@@ -4,6 +4,7 @@ import 'bmi.dart';
 import 'calorie.dart';
 import 'weight.dart';
 import '../services/api_service.dart';
+import 'water.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -222,6 +223,26 @@ class _HealthScreenState extends State<HealthScreen> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const WeightScreen()),
+                  );
+
+                  if (!mounted) return;
+
+                  await _loadHealthData();
+                },
+              ),
+              const SizedBox(height: 12),
+              HealthFeatureCard(
+                icon: Icons.water_drop_outlined,
+                title: "Water Tracker",
+                description:
+                    "Track your daily water intake, monitor hydration progress, and stay on target with your personalized water goal.",
+                buttonText: "Water Tracker",
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WaterTrackerScreen(),
+                    ),
                   );
 
                   if (!mounted) return;
