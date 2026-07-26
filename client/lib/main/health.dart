@@ -235,7 +235,7 @@ class _HealthScreenState extends State<HealthScreen> {
                 icon: Icons.water_drop_outlined,
                 title: "Water Tracker",
                 description:
-                    "Track your daily water intake, monitor hydration progress, and stay on target with your personalized water goal.",
+                    "Track your daily water intake, and stay on target water goal.",
                 buttonText: "Water Tracker",
                 onTap: () async {
                   await Navigator.push(
