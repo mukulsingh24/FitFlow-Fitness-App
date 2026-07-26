@@ -7,11 +7,16 @@ from fastapi import Header, HTTPException
 
 
 if not firebase_admin._apps:
-    firebase_credentials = json.loads(
-        os.environ["FIREBASE_CREDENTIALS"]
-    )
 
-    cred = credentials.Certificate(firebase_credentials)
+    if os.getenv("FIREBASE_CREDENTIALS"):
+        firebase_credentials = json.loads(
+            os.environ["FIREBASE_CREDENTIALS"]
+        )
+        cred = credentials.Certificate(firebase_credentials)
+    else:
+        cred = credentials.Certificate(
+            "firebase-service-account.json"
+        )
 
     firebase_admin.initialize_app(cred)
 
