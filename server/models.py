@@ -63,17 +63,18 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
     weight_logs = relationship(
-    "WeightLog",
-    cascade="all, delete-orphan",
+        "WeightLog",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     notifications = relationship(
-    "Notification",
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
-)
-
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )   
 class Exercise(Base):
     __tablename__ = "exercises"
 
@@ -269,7 +270,10 @@ class WeightLog(Base):
         default=datetime.utcnow,
     )
 
-    user = relationship("User")
+    user = relationship(
+    "User",
+    back_populates="weight_logs",
+)
 
 class WaterLog(Base):
     __tablename__ = "water_logs"
