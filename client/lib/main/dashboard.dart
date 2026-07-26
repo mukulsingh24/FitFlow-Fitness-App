@@ -160,9 +160,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String userName = user?.displayName?.isNotEmpty == true
         ? user!.displayName!
         : "FitFlow User";
-
-    final String userEmail = user?.email ?? "No email available";
-
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
@@ -227,69 +224,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-
-              const SizedBox(height: 6),
-
-              Text(
-                userEmail,
-                style: const TextStyle(color: textMuted, fontSize: 13),
-              ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    try {
-                      final data = await ApiService.getCurrentUser();
-
-                      debugPrint('FASTAPI USER: $data');
-
-                      if (!context.mounted) return;
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Backend connected: ${data['email']}'),
-                          backgroundColor: primaryDark,
-                        ),
-                      );
-                    } catch (e) {
-                      debugPrint('API ERROR: $e');
-
-                      if (!context.mounted) return;
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Backend error: $e'),
-                          backgroundColor: const Color(0xFFEF6C6C),
-                        ),
-                      );
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryDark,
-                    side: const BorderSide(color: border),
-                    backgroundColor: surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: const Icon(Icons.cloud_done_outlined),
-                  label: const Text(
-                    "TEST BACKEND CONNECTION",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 24),
-
               _buildFitnessSummary(),
-
               const SizedBox(height: 28),
-
               const Text(
                 "Quick Overview",
                 style: TextStyle(
@@ -298,16 +235,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               const Text(
                 "Your fitness activity at a glance.",
                 style: TextStyle(color: textMuted, fontSize: 13),
               ),
-
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
@@ -318,9 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       subtitle: "This week",
                     ),
                   ),
-
                   SizedBox(width: 12),
-
                   Expanded(
                     child: _OverviewCard(
                       icon: Icons.local_fire_department,
