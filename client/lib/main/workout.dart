@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../services/notification_service.dart';
 
 class WorkoutExercise {
   final String id;
@@ -465,7 +466,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           if (confirm == true) {
                             try {
                               await ApiService.deleteWorkout(workout['id']);
-
+                              await NotificationService.instance
+                                  .showWorkoutDeleted();
                               await _loadWorkoutHistory();
 
                               if (!mounted) return;
@@ -941,7 +943,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           workoutDate: selectedDate,
           exercises: workoutExercises,
         );
-
+        await NotificationService.instance.showWorkoutUpdated();
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -959,17 +961,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           workoutDate: selectedDate,
           exercises: workoutExercises,
         );
-
+        await NotificationService.instance.showWorkoutSaved();
         debugPrint('WORKOUT SAVED: $result');
-
         await _loadWorkoutHistory();
-
         if (!mounted) return;
-
         setState(() {
           exercises.clear();
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Workout saved successfully!'),

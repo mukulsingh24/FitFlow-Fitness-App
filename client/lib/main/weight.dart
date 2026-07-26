@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class WeightScreen extends StatefulWidget {
   const WeightScreen({super.key});
@@ -94,13 +95,10 @@ class _WeightScreenState extends State<WeightScreen> {
         weight: double.parse(weightController.text.trim()),
         notes: null,
       );
-
+      await NotificationService.instance.showWeightUpdated();
       weightController.clear();
-
       await loadWeightHistory();
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Weight saved successfully"),
@@ -256,7 +254,8 @@ class _WeightScreenState extends State<WeightScreen> {
                                   weight: weight,
                                   notes: record["notes"],
                                 );
-
+                                await NotificationService.instance
+                                    .showWeightUpdated();
                                 if (!mounted) return;
 
                                 Navigator.pop(context);

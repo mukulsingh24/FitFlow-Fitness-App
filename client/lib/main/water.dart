@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class WaterTrackerScreen extends StatefulWidget {
   const WaterTrackerScreen({super.key});
@@ -84,6 +85,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
 
     try {
       await ApiService.addWater(amountMl: amount);
+      await NotificationService.instance.showWaterLogged();
 
       await loadData();
 
@@ -122,6 +124,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
 
     try {
       await ApiService.addWater(amountMl: amount);
+      await NotificationService.instance.showWaterLogged();
 
       amountController.clear();
       FocusScope.of(context).unfocus();
@@ -288,7 +291,6 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                                   id: entry["id"],
                                   amountMl: updated,
                                 );
-
                                 if (!mounted) return;
 
                                 Navigator.pop(context);

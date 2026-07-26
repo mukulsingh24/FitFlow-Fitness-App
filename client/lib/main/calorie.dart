@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class CalorieCalculatorScreen extends StatefulWidget {
   const CalorieCalculatorScreen({super.key});
@@ -174,6 +175,7 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
         activityLevel: selectedActivity,
         goal: selectedGoal,
       );
+      await NotificationService.instance.showCaloriesUpdated();
       await loadCalorieHistory();
       debugPrint("CALORIE SAVED: $result");
 
@@ -447,7 +449,8 @@ class _CalorieCalculatorScreenState extends State<CalorieCalculatorScreen>
                             activityLevel: activity,
                             goal: goal,
                           );
-
+                          await NotificationService.instance
+                              .showCaloriesUpdated();
                           Navigator.pop(context);
 
                           await loadCalorieHistory();

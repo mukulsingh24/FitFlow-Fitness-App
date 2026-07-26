@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class BmiCalculatorScreen extends StatefulWidget {
   const BmiCalculatorScreen({super.key});
@@ -97,7 +98,7 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
     });
     try {
       await ApiService.saveBMI(weight: weight, heightCm: heightCm);
-
+      await NotificationService.instance.showBMIUpdated();
       await loadBMIHistory();
 
       if (!mounted) return;
@@ -135,7 +136,6 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
   Future<void> deleteBMI(int id) async {
     try {
       await ApiService.deleteBMI(id);
-
       await loadBMIHistory();
 
       if (!mounted) return;
@@ -319,7 +319,8 @@ class _BmiCalculatorScreenState extends State<BmiCalculatorScreen> {
                                   weight: weight,
                                   heightCm: height,
                                 );
-
+                                await NotificationService.instance
+                                    .showBMIUpdated();
                                 if (!mounted) return;
 
                                 Navigator.pop(context);

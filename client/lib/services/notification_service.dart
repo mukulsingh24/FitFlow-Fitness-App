@@ -17,15 +17,13 @@ class NotificationService {
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'fitflow_notifications',
     'FitFlow Notifications',
-    description: 'Workout and water reminders',
+    description: 'FitFlow Notifications',
     importance: Importance.high,
   );
 
   Future<void> initialize() async {
     await _requestPermission();
-
     await _initializeLocalNotifications();
-
     await _initializeFirebaseMessaging();
   }
 
@@ -67,7 +65,7 @@ class NotificationService {
     debugPrint("FCM Token: $token");
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showNotification(
+      showNotification(
         title: message.notification?.title ?? "FitFlow",
         body: message.notification?.body ?? "",
       );
@@ -78,28 +76,7 @@ class NotificationService {
     });
   }
 
-  Future<void> showTestNotification() async {
-    await _showNotification(
-      title: "FitFlow",
-      body: "Notifications are working successfully 🎉",
-    );
-  }
-
-  Future<void> showWorkoutReminder() async {
-    await _showNotification(
-      title: "🏋 Workout Reminder",
-      body: "Don't break today's streak. Log your workout now!",
-    );
-  }
-
-  Future<void> showWaterReminder() async {
-    await _showNotification(
-      title: "💧 Water Reminder",
-      body: "Time to drink a glass of water.",
-    );
-  }
-
-  Future<void> _showNotification({
+  Future<void> showNotification({
     required String title,
     required String body,
   }) async {
@@ -111,12 +88,82 @@ class NotificationService {
         android: AndroidNotificationDetails(
           'fitflow_notifications',
           'FitFlow Notifications',
-          channelDescription: 'Workout and water reminders',
+          channelDescription: 'FitFlow Notifications',
           importance: Importance.max,
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
       ),
+    );
+  }
+
+  Future<void> showWelcomeNotification() async {
+    await showNotification(
+      title: "🎉 Welcome to FitFlow",
+      body: "Your fitness journey starts today!",
+    );
+  }
+
+  Future<void> showLoginSuccess() async {
+    await showNotification(
+      title: "👋 Welcome Back",
+      body: "Let's achieve today's fitness goals!",
+    );
+  }
+
+  Future<void> showWorkoutSaved() async {
+    await showNotification(
+      title: "💪 Workout Saved",
+      body: "Awesome! Keep your streak alive.",
+    );
+  }
+
+  Future<void> showWorkoutUpdated() async {
+    await showNotification(
+      title: "✏️ Workout Updated",
+      body: "Your workout has been updated successfully.",
+    );
+  }
+
+  Future<void> showWorkoutDeleted() async {
+    await showNotification(
+      title: "🗑️ Workout Deleted",
+      body: "The workout has been removed.",
+    );
+  }
+
+  Future<void> showWaterLogged() async {
+    await showNotification(
+      title: "💧 Water Logged",
+      body: "Great! Keep yourself hydrated.",
+    );
+  }
+
+  Future<void> showCaloriesUpdated() async {
+    await showNotification(
+      title: "🔥 Calories Updated",
+      body: "Your calorie intake has been saved.",
+    );
+  }
+
+  Future<void> showWeightUpdated() async {
+    await showNotification(
+      title: "⚖️ Weight Updated",
+      body: "Your latest weight has been recorded.",
+    );
+  }
+
+  Future<void> showBMIUpdated() async {
+    await showNotification(
+      title: "📊 BMI Updated",
+      body: "Your BMI has been calculated successfully.",
+    );
+  }
+
+  Future<void> showTestNotification() async {
+    await showNotification(
+      title: "FitFlow",
+      body: "Notifications are working successfully 🎉",
     );
   }
 }
