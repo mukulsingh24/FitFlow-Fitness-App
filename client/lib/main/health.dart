@@ -34,6 +34,13 @@ class _HealthScreenState extends State<HealthScreen> {
     _loadHealthData();
   }
 
+  @override
+  void didUpdateWidget(covariant HealthScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _loadHealthData();
+  }
+
   Future<void> _loadHealthData() async {
     try {
       final results = await Future.wait([

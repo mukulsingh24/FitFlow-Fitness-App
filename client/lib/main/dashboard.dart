@@ -33,6 +33,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadLatestHealthData();
   }
 
+  @override
+  void didUpdateWidget(covariant DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _loadLatestHealthData();
+  }
+
   Future<void> _loadLatestHealthData() async {
     try {
       final results = await Future.wait([

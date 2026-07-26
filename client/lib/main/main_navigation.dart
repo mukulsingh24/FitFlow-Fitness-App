@@ -27,8 +27,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onDestinationSelected(int index) {
     setState(() {
-      _currentIndex = index;
-
       if (index == 0) {
         _dashboardRefreshKey++;
       }
@@ -36,6 +34,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       if (index == 1) {
         _healthRefreshKey++;
       }
+
+      _currentIndex = index;
     });
   }
 
@@ -140,19 +140,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                     label: "Health",
                   ),
-
-                  NavigationDestination(
-                    icon: Icon(
-                      Icons.local_fire_department_outlined,
-                      color: textMuted,
-                    ),
-                    selectedIcon: Icon(
-                      Icons.local_fire_department,
-                      color: primaryDark,
-                    ),
-                    label: "Calories",
-                  ),
-
                   NavigationDestination(
                     icon: Icon(Icons.fitness_center_outlined, color: textMuted),
                     selectedIcon: Icon(
