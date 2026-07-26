@@ -101,3 +101,10 @@ class BMIUpdate(BaseModel):
     weight: float = Field(gt=0)
     height_cm: float = Field(gt=0)
 
+class CalorieUpdate(BaseModel):
+    age: int = Field(gt=0)
+    gender: str
+    height_cm: float = Field(gt=0)
+    weight_kg: float = Field(gt=0)
+    activity_level: str
+    goal: str

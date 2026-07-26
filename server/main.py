@@ -27,7 +27,7 @@ from schemas import (
     WaterCreate,
     WaterUpdate,
     BMIUpdate,
-      
+    CalorieUpdate,
 )
 Base.metadata.create_all(bind=engine)
 app = FastAPI(
@@ -1052,3 +1052,156 @@ def delete_bmi(
     db.commit()
 
     return {"message": "BMI deleted successfully"}
+
+
+@app.put("/health/calories/{record_id}")
+def update_calories(
+    record_id: int,
+    calorie_data: CalorieUpdate,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(CalorieRecord)
+        .filter(
+            CalorieRecord.id == record_id,
+            CalorieRecord.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Calorie record not found",
+        )
+
+    if calorie_data.gender.lower() == "male":
+        bmr = (
+            (10 * calorie_data.weight_kg)
+            + (6.25 * calorie_data.height_cm)
+            - (5 * calorie_data.age)
+            + 5
+        )
+    else:
+        bmr = (
+            (10 * calorie_data.weight_kg)
+            + (6.25 * calorie_data.height_cm)
+            - (5 * calorie_data.age)
+            - 161
+        )
+
+    activity_multipliers = {
+        "Sedentary": 1.2,
+        "Lightly Active": 1.375,
+        "Moderately Active": 1.55,
+        "Very Active": 1.725,
+        "Extra Active": 1.9,
+    }
+
+    multiplier = activity_multipliers.get(
+        calorie_data.activity_level,
+        1.2,
+    )
+
+    maintenance_calories = bmr * multiplier
+
+    target_calories = maintenance_calories
+
+    if calorie_data.goal == "Lose Weight":
+        target_calories -= 500
+    elif calorie_data.goal == "Gain Weight":
+        target_calories += 500
+
+    if target_calories < 1200:
+        target_calories = 1200
+
+    record.age = calorie_data.age
+    record.gender = calorie_data.gender
+    record.height_cm = calorie_data.height_cm
+    record.weight_kg = calorie_data.weight_kg
+    record.activity_level = calorie_data.activity_level
+    record.goal = calorie_data.goal
+    record.bmr = round(bmr, 2)
+    record.maintenance_calories = round(
+        maintenance_calories,
+        2,
+    )
+    record.target_calories = round(
+        target_calories,
+        2,
+    )
+
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "message": "Calorie record updated successfully",
+        "id": record.id,
+        "age": record.age,
+        "gender": record.gender,
+        "height_cm": record.height_cm,
+        "weight_kg": record.weight_kg,
+        "activity_level": record.activity_level,
+        "goal": record.goal,
+        "bmr": record.bmr,
+        "maintenance_calories": record.maintenance_calories,
+        "target_calories": record.target_calories,
+        "created_at": record.created_at,
+    }
+
+@app.delete("/health/calories/{record_id}")
+def delete_calories(
+    record_id: int,
+    firebase_user=Depends(verify_firebase_token),
+    db: Session = Depends(get_db),
+):
+    firebase_uid = firebase_user.get("uid")
+
+    user = (
+        db.query(User)
+        .filter(User.firebase_uid == firebase_uid)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    record = (
+        db.query(CalorieRecord)
+        .filter(
+            CalorieRecord.id == record_id,
+            CalorieRecord.user_id == user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Calorie record not found",
+        )
+
+    db.delete(record)
+    db.commit()
+
+    return {
+        "message": "Calorie record deleted successfully"
+    }
