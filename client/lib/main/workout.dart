@@ -133,7 +133,7 @@ const Map<String, List<String>> exerciseLibrary = {
     'Shrugs',
   ],
 
-  'Rest': [],
+  'Rest': ['Rest Day Log'],
 };
 
 class WorkoutScreen extends StatefulWidget {
@@ -1163,7 +1163,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     style: const TextStyle(
                       color: primaryDark,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 20,
                     ),
                   ),
                 ),
@@ -1321,59 +1321,142 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Widget _buildWorkoutCalendar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: border),
       ),
-      child: TableCalendar(
-        firstDay: DateTime.utc(2020, 1, 1),
-        lastDay: DateTime.utc(2035, 12, 31),
-        focusedDay: focusedDay,
-        calendarFormat: calendarFormat,
-        selectedDayPredicate: (day) {
-          return isSameDay(selectedDate, day);
-        },
-        eventLoader: (day) {
-          final normalized = DateTime(day.year, day.month, day.day);
+      child: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2035, 12, 31),
+            focusedDay: focusedDay,
+            calendarFormat: calendarFormat,
+            selectedDayPredicate: (day) {
+              return isSameDay(selectedDate, day);
+            },
+            eventLoader: (day) {
+              final normalized = DateTime(day.year, day.month, day.day);
 
-          if (workoutDates.contains(normalized)) {
-            return ['🔥'];
-          }
+              if (workoutDates.contains(normalized)) {
+                return ['workout'];
+              }
 
-          return [];
-        },
-        onDaySelected: (selected, focused) {
-          setState(() {
-            selectedDate = selected;
-            focusedDay = focused;
-          });
-        },
-        calendarBuilders: CalendarBuilders(
-          markerBuilder: (context, date, events) {
-            if (events.isEmpty) return null;
+              return [];
+            },
+            onDaySelected: (selected, focused) {
+              setState(() {
+                selectedDate = selected;
+                focusedDay = focused;
+              });
+            },
+            daysOfWeekHeight: 22,
+            rowHeight: 42,
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, events) {
+                if (events.isEmpty) return null;
 
-            return const Positioned(
-              bottom: 2,
-              child: Text('🔥', style: TextStyle(fontSize: 12)),
-            );
-          },
-        ),
-        headerStyle: const HeaderStyle(
-          formatButtonVisible: false,
-          titleCentered: true,
-        ),
-        calendarStyle: CalendarStyle(
-          todayDecoration: BoxDecoration(
-            color: primaryDark,
-            shape: BoxShape.circle,
+                return Positioned(
+                  bottom: 3,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Text('🔥', style: TextStyle(fontSize: 12)),
+                  ),
+                );
+              },
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              headerPadding: EdgeInsets.only(bottom: 12),
+              titleTextStyle: TextStyle(
+                color: textDark,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+              leftChevronIcon: Icon(
+                Icons.chevron_left_rounded,
+                color: primaryDark,
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right_rounded,
+                color: primaryDark,
+              ),
+            ),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(
+                color: textMuted,
+                fontWeight: FontWeight.w700,
+                fontSize: 11.5,
+              ),
+              weekendStyle: TextStyle(
+                color: textMuted,
+                fontWeight: FontWeight.w700,
+                fontSize: 11.5,
+              ),
+            ),
+            calendarStyle: const CalendarStyle(
+              outsideDaysVisible: false,
+              markersMaxCount: 1,
+              cellMargin: EdgeInsets.all(4),
+              defaultTextStyle: TextStyle(
+                color: textDark,
+                fontWeight: FontWeight.w600,
+              ),
+              weekendTextStyle: TextStyle(
+                color: textDark,
+                fontWeight: FontWeight.w600,
+              ),
+              todayDecoration: BoxDecoration(
+                color: primaryDark,
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: primary,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          selectedDecoration: BoxDecoration(
-            color: primary,
-            shape: BoxShape.circle,
+          const SizedBox(height: 12),
+          const Divider(color: border, height: 1),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: primaryDark,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                "Today",
+                style: TextStyle(color: textMuted, fontSize: 11.5),
+              ),
+              const SizedBox(width: 18),
+              const Text('🔥', style: TextStyle(fontSize: 11)),
+              const SizedBox(width: 6),
+              const Text(
+                "Workout logged",
+                style: TextStyle(color: textMuted, fontSize: 11.5),
+              ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1617,7 +1700,6 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
   bool isCustomExercise = false;
 
   @override
-  @override
   void initState() {
     super.initState();
 
@@ -1751,6 +1833,16 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
                         ? 'Custom Exercise'
                         : selectedExercise,
                     isExpanded: true,
+                    dropdownColor: surface,
+                    style: const TextStyle(
+                      color: textDark,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: textMuted,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Exercise',
                       prefixIcon: const Icon(
@@ -1779,7 +1871,10 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
                       ...widget.availableExercises.map(
                         (exercise) => DropdownMenuItem<String>(
                           value: exercise,
-                          child: Text(exercise),
+                          child: Text(
+                            exercise,
+                            style: const TextStyle(color: textDark),
+                          ),
                         ),
                       ),
                       const DropdownMenuItem<String>(

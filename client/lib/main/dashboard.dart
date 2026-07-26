@@ -26,6 +26,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double? latestCalories;
   double? latestWeight;
   bool isLoadingHealth = true;
+  int workoutsThisWeek = 0;
+  int currentStreak = 0;
 
   @override
   void initState() {
@@ -53,6 +55,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final calorieHistory = results[1];
       final weightHistory = results[2];
       final workoutHistory = results[3];
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      final weekStart = todayDate.subtract(
+        Duration(days: todayDate.weekday - 1),
+      );
+      final weeklyWorkouts = workoutHistory.where((workout) {
+        final date = DateTime.parse(workout["workout_date"]);
+        final workoutDate = DateTime(date.year, date.month, date.day);
+
+        return !workoutDate.isBefore(weekStart);
+      }).length;
+      final workoutDates = workoutHistory.map<DateTime>((workout) {
+        final date = DateTime.parse(workout["workout_date"]);
+        return DateTime(date.year, date.month, date.day);
+      }).toSet();
+      int streak = 0;
+      DateTime current = todayDate;
+      if (!workoutDates.contains(current)) {
+        current = current.subtract(const Duration(days: 1));
+
+        if (!workoutDates.contains(current)) {
+          streak = 0;
+        }
+      }
+      while (workoutDates.contains(current)) {
+        streak++;
+        current = current.subtract(const Duration(days: 1));
+      }
       final List<Map<String, dynamic>> activities = [];
       for (final record in bmiHistory) {
         activities.add({
@@ -108,7 +138,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         recentActivity = activities.take(10).toList();
-
+        workoutsThisWeek = weeklyWorkouts;
+        currentStreak = streak;
         isLoadingHealth = false;
       });
     } catch (e) {
@@ -277,13 +308,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 16),
 
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _OverviewCard(
                       icon: Icons.fitness_center,
                       title: "Workouts",
-                      value: "0",
+                      value: "$workoutsThisWeek",
                       subtitle: "This week",
                     ),
                   ),
@@ -294,8 +325,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _OverviewCard(
                       icon: Icons.local_fire_department,
                       title: "Current Streak",
-                      value: "0 days",
-                      subtitle: "Keep going",
+                      value: "$currentStreak",
+                      subtitle: currentStreak == 1 ? "day" : "days",
                     ),
                   ),
                 ],
